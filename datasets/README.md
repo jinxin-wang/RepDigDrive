@@ -42,15 +42,15 @@ wget -c -r --no-parent --progress --no-check-certificate https://cb.csail.mit.ed
 
 - Browsable mutation maps for 37 cancer types are provided at [link](https://resgen.io/maxsh/Cancer_Mutation_Maps/views)
 
-- PCAWG data are available from  [link](https://dcc.icgc.org/releases/PCAWG/)
+- PCAWG data (WGS) are available from  [link](https://dcc.icgc.org/releases/PCAWG/)
 
 ```
 (base) [j_wang@n02 downloads]$ wget -c -r --no-parent --progress --no-check-certificate https://cb.csail.mit.edu/cb/DIG/downloads/mutation_files/PCAWG/ICGC_only/
 
 ```
-- Hartwig Medical Foundation data are available from  [link](https://database.hartwigmedicalfoundation.nl/)
+- Hartwig Medical Foundation data (WGS) are available from  [link](https://database.hartwigmedicalfoundation.nl/)
 
-- Whole-exome sequencing data compiled by Dietlein et al. are available from  [link](http://www.cancer-genes.org/)
+- Whole-exome sequencing data (WES) compiled by Dietlein et al. are available from  [link](http://www.cancer-genes.org/)
 
 - Targeted sequencing data are available from  [link](https://www.cbioportal.org/)
 
