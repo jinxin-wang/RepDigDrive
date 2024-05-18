@@ -64,7 +64,7 @@ wget -c -r --no-parent --progress --no-check-certificate https://cb.csail.mit.ed
 
 - 723 chromatin marks in 111 tissues from Roadmap Epigenomics : in the [supplementary tables - page T3](https://static-content.springer.com/esm/art%3A10.1038%2Fs41587-022-01353-8/MediaObjects/41587_2022_1353_MOESM3_ESM.xlsx) 
 
-About more details, please refer to the [download script](https://github.com/jinxin-wang/RepDigDrive/blob/main/scripts/download_data_resources.sh)
+About more details, please refer to the [download script](https://github.com/jinxin-wang/RepDigDrive/blob/main/scripts/download_data_resources.sh) and [visual data](https://github.com/jinxin-wang/RepDigDrive/tree/main/visual/data)
 
 <!-- ### Extended data in paper
 
