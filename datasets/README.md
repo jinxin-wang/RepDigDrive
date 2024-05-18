@@ -4,14 +4,6 @@
 
 ```
 wget -c -r --no-parent --progress --no-check-certificate https://cb.csail.mit.edu/cb/DIG/downloads/ 
-```
-
-- Browsable mutation maps for 37 cancer types are provided at [link](https://resgen.io/maxsh/Cancer_Mutation_Maps/views)
-
-- PCAWG data are available from  [link](https://dcc.icgc.org/releases/PCAWG/)
-
-```
-(base) [j_wang@n02 downloads]$ wget -c -r --no-parent --progress --no-check-certificate https://cb.csail.mit.edu/cb/DIG/downloads/mutation_files/PCAWG/ICGC_only/
 
 (base) [j_wang@n02 downloads]$ tree -L 2
 .
@@ -45,6 +37,16 @@ wget -c -r --no-parent --progress --no-check-certificate https://cb.csail.mit.ed
     |-- [ 67M]  Biliary-AdenoCA_SNV_MNV_INDEL.Pretrained.h5
     |-- [ 77M]  Bladder-TCC_SNV_MNV_INDEL.Pretrained.h5
     |-- ....
+
+```
+
+- Browsable mutation maps for 37 cancer types are provided at [link](https://resgen.io/maxsh/Cancer_Mutation_Maps/views)
+
+- PCAWG data are available from  [link](https://dcc.icgc.org/releases/PCAWG/)
+
+```
+(base) [j_wang@n02 downloads]$ wget -c -r --no-parent --progress --no-check-certificate https://cb.csail.mit.edu/cb/DIG/downloads/mutation_files/PCAWG/ICGC_only/
+
 ```
 - Hartwig Medical Foundation data are available from  [link](https://database.hartwigmedicalfoundation.nl/)
 
