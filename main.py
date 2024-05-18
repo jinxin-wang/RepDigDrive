@@ -4,10 +4,12 @@ import yaml
 import torch
 import argparse
 import trainer
-from utils import metric
+# from utils import metric
 from models import *
 from datasets import *
 from torch.utils.data import DataLoader
+
+from datasets.PCAWG import PCAWG
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -15,15 +17,8 @@ def parse_args():
     # .....
     return parser.parse_args()
 
-def load_config(yaml_path):
-    with open(yaml_path, 'r', encoding='utf-8') as fd:
-        config = yaml.safe_load(fd)
-    return config
-
 def main(args):
-    print('Hello World!')
-    model_config = load_config(args.model_config_path)
-    print(model_config)
+    print(PCAWG().config)
 
 if __name__ == '__main__':
     args = parse_args()
