@@ -66,7 +66,7 @@ wget -c -r --no-parent --progress --no-check-certificate https://cb.csail.mit.ed
 
 About more details, please refer to the [download script](https://github.com/jinxin-wang/RepDigDrive/blob/main/scripts/download_data_resources.sh)
 
-### Extended data in paper
+<!-- ### Extended data in paper
 
 1. [Detailed overview of the Dig model](https://www.nature.com/articles/s41587-022-01353-8/figures/5) :
 
@@ -84,4 +84,4 @@ About more details, please refer to the [download script](https://github.com/jin
 
 <img src="https://media.springernature.com/full/springer-static/esm/art%3A10.1038%2Fs41587-022-01353-8/MediaObjects/41587_2022_1353_Fig8_ESM.jpg" width="500" >
 
-
+ -->
