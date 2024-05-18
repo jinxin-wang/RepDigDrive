@@ -56,6 +56,8 @@ wget -c -r --no-parent --progress --no-check-certificate https://cb.csail.mit.ed
 
 - Regions and model predictions for each fold of each cancer for which a deep learning model was trained. Regions that were filtered are also listed along with their respective model predictions as [Supplementary Data](https://static-content.springer.com/esm/art%3A10.1038%2Fs41587-022-01353-8/MediaObjects/41587_2022_1353_MOESM4_ESM.zip): <br>
 
+About more details, please refer to the [download script](https://github.com/jinxin-wang/RepDigDrive/blob/main/scripts/download_data_resources.sh)
+
 ### Extended data in paper
 
 1. [Detailed overview of the Dig model](https://www.nature.com/articles/s41587-022-01353-8/figures/5) :
@@ -64,16 +66,14 @@ wget -c -r --no-parent --progress --no-check-certificate https://cb.csail.mit.ed
 
 2. [Epigenetic input features](https://www.nature.com/articles/s41587-022-01353-8/figures/6)
 
-![Epigenetic](https://media.springernature.com/full/springer-static/esm/art%3A10.1038%2Fs41587-022-01353-8/MediaObjects/41587_2022_1353_Fig6_ESM.jpg)
+<img src="https://media.springernature.com/full/springer-static/esm/art%3A10.1038%2Fs41587-022-01353-8/MediaObjects/41587_2022_1353_Fig6_ESM.jpg" width="500" >
 
 3. [Cryptic splice SNV enrichment](https://www.nature.com/articles/s41587-022-01353-8/figures/7)
 
-![splice](https://media.springernature.com/full/springer-static/esm/art%3A10.1038%2Fs41587-022-01353-8/MediaObjects/41587_2022_1353_Fig7_ESM.jpg)
+<img src="https://media.springernature.com/full/springer-static/esm/art%3A10.1038%2Fs41587-022-01353-8/MediaObjects/41587_2022_1353_Fig7_ESM.jpg" width="500" >
 
 4. [distribution of activating mutations in gene-tumor pairs](https://www.nature.com/articles/s41587-022-01353-8/figures/8)
 
-![activating mutations](https://media.springernature.com/full/springer-static/esm/art%3A10.1038%2Fs41587-022-01353-8/MediaObjects/41587_2022_1353_Fig8_ESM.jpg)
+<img src="https://media.springernature.com/full/springer-static/esm/art%3A10.1038%2Fs41587-022-01353-8/MediaObjects/41587_2022_1353_Fig8_ESM.jpg" width="500" >
 
-About more details, please refer to the [download script](https://github.com/jinxin-wang/RepDigDrive/blob/main/scripts/download_data_resources.sh)
 
-    
