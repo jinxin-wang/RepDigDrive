@@ -2,7 +2,7 @@
 
 - Data generated as part of this study are available as [supplementary tables](https://static-content.springer.com/esm/art%3A10.1038%2Fs41587-022-01353-8/MediaObjects/41587_2022_1353_MOESM3_ESM.xlsx) or from [link](http://dig-cancer.csail.mit.edu/)
 
-```
+<!-- ```
 wget -c -r --no-parent --progress --no-check-certificate https://cb.csail.mit.edu/cb/DIG/downloads/ 
 
 (base) [j_wang@n02 downloads]$ tree -L 2
@@ -38,16 +38,16 @@ wget -c -r --no-parent --progress --no-check-certificate https://cb.csail.mit.ed
     |-- [ 77M]  Bladder-TCC_SNV_MNV_INDEL.Pretrained.h5
     |-- ....
 
-```
+``` -->
 
 - Browsable mutation maps for 37 cancer types are provided at [link](https://resgen.io/maxsh/Cancer_Mutation_Maps/views)
 
 - PCAWG data (WGS) are available from  [link](https://dcc.icgc.org/releases/PCAWG/)
 
-```
+<!-- ```
 (base) [j_wang@n02 downloads]$ wget -c -r --no-parent --progress --no-check-certificate https://cb.csail.mit.edu/cb/DIG/downloads/mutation_files/PCAWG/ICGC_only/
 
-```
+``` -->
 - Hartwig Medical Foundation data (WGS) are available from  [link](https://database.hartwigmedicalfoundation.nl/)
 
 - Whole-exome sequencing data (WES) compiled by Dietlein et al. are available from  [link](http://www.cancer-genes.org/)
