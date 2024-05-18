@@ -56,9 +56,11 @@ wget -c -r --no-parent --progress --no-check-certificate https://cb.csail.mit.ed
 
 - Regions and model predictions for each fold of each cancer for which a deep learning model was trained. Regions that were filtered are also listed along with their respective model predictions as [Supplementary Data](https://static-content.springer.com/esm/art%3A10.1038%2Fs41587-022-01353-8/MediaObjects/41587_2022_1353_MOESM4_ESM.zip): <br>
 
-- Replication Timing
+- 36mer Mappability: [link](https://genome.ucsc.edu/cgi-bin/hgFileUi?db=hg19&g=wgEncodeMapability) and [download page](https://hgdownload.soe.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/)
 
-- 
+- Replication Timing from ten cell lines from ENCODE : in the [supplementary tables - page T3](https://static-content.springer.com/esm/art%3A10.1038%2Fs41587-022-01353-8/MediaObjects/41587_2022_1353_MOESM3_ESM.xlsx) 
+
+- 723 chromatin marks in 111 tissues from Roadmap Epigenomics : in the [supplementary tables - page T3](https://static-content.springer.com/esm/art%3A10.1038%2Fs41587-022-01353-8/MediaObjects/41587_2022_1353_MOESM3_ESM.xlsx) 
 
 About more details, please refer to the [download script](https://github.com/jinxin-wang/RepDigDrive/blob/main/scripts/download_data_resources.sh)
 
