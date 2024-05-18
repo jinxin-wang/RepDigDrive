@@ -2,16 +2,17 @@
 
 set -e ;
 
-LOCAL_PATH=$PWD
+#### Please set the path for storing the resources
+SOURCE_PATH=$PWD
 
 #### download from the resources provided by paper 
-cd ${LOCAL_PATH}
-wget -c -r --no-parent --progress --no-check-certificate https://cb.csail.mit.edu/cb/DIG/downloads/ 
-mv ./cb.csail.mit.edu/cb/DIG .
-rm -rf ./cb.csail.mit.edu/
+cd ${SOURCE_PATH}
+wget -c -r --no-parent --progress --no-check-certificate https://cb.csail.mit.edu/cb/DIG/downloads/ ;
+mv ./cb.csail.mit.edu/cb/DIG . ;
+rm -rf ./cb.csail.mit.edu/ ;
 
 #### download 723 chromatin marks in 111 tissues from Roadmap Epigenomics
-cd ${LOCAL_PATH} ; mkdir Epigenomics ; cd Epigenomics ;
+cd ${SOURCE_PATH} ; mkdir Epigenomics ; cd Epigenomics ;
 wget -c --progress --no-check-certificate https://egg2.wustl.edu/roadmap/data/byFileType/signal/consolidated/macs2signal/pval/E001-H3K27me3.pval.signal.bigwig
 wget -c --progress --no-check-certificate https://egg2.wustl.edu/roadmap/data/byFileType/signal/consolidated/macs2signal/pval/E001-H3K36me3.pval.signal.bigwig
 wget -c --progress --no-check-certificate https://egg2.wustl.edu/roadmap/data/byFileType/signal/consolidated/macs2signal/pval/E001-H3K4me1.pval.signal.bigwig
@@ -737,7 +738,7 @@ wget -c --progress --no-check-certificate https://egg2.wustl.edu/roadmap/data/by
 wget -c --progress --no-check-certificate https://egg2.wustl.edu/roadmap/data/byFileType/signal/consolidated/macs2signal/pval/E113-H3K9me3.pval.signal.bigwig
 
 #### download Replication Timing from ten cell lines from ENCODE
-cd ${LOCAL_PATH} ; mkdir Replication_Timing ; cd Replication_Timing ;
+cd ${SOURCE_PATH} ; mkdir Replication_Timing ; cd Replication_Timing ;
 wget -c --progress --no-check-certificate https://hgdownload-test.gi.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeUwRepliSeq/wgEncodeUwRepliSeqBg02esWaveSignalRep1.bigWig
 wget -c --progress --no-check-certificate https://hgdownload-test.gi.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeUwRepliSeq/wgEncodeUwRepliSeqBjWaveSignalRep2.bigWig
 wget -c --progress --no-check-certificate https://hgdownload-test.gi.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeUwRepliSeq/wgEncodeUwRepliSeqGm12878WaveSignalRep1.bigWig
@@ -750,7 +751,7 @@ wget -c --progress --no-check-certificate https://hgdownload-test.gi.ucsc.edu/go
 wget -c --progress --no-check-certificate https://hgdownload-test.gi.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeUwRepliSeq/wgEncodeUwRepliSeqSknshWaveSignalRep1.bigWig
 
 #### download 36mer Mappability
-cd ${LOCAL_PATH} ; mkdir Mappability ; cd Mappability ;
+cd ${SOURCE_PATH} ; mkdir Mappability ; cd Mappability ;
 # wget -c --progress --no-check-certificate https://hgdownload.soe.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign24mer.bigWig
 wget -c --progress --no-check-certificate https://hgdownload.soe.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign36mer.bigWig
 # wget -c --progress --no-check-certificate https://hgdownload.soe.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability/wgEncodeCrgMapabilityAlign40mer.bigWig
