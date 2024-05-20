@@ -24,11 +24,13 @@ pip3 install scikit-learn
 pip3 install numpy pandas matplotlib ;
 pip3 install seaborn ;
 pip3 install tqdm ;
+pip3 install scipy statsmodels ;
 
 # python packages
 pip3 install PyYAML ;
 pip3 install h5py ;
 pip3 install pypickle ;
+pip3 install tables ;
 
 # bio packages :
 pip3 install pyBigWig pybbi ;
