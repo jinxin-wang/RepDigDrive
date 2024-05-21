@@ -7,7 +7,7 @@ CONDA_ENV_NAME="RepDigDrive"
 # export env variables
 source ~/.bashrc
 
-conda create -n ${CONDA_ENV_NAME} "python>=3.8" --yes ;
+conda create -n ${CONDA_ENV_NAME} "python=3.10" --yes ;
 conda activate ${CONDA_ENV_NAME} ;
 
 # Installing pytorch
