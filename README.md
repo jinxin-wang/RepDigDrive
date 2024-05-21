@@ -9,7 +9,3 @@ The paper: [Genome-wide mapping of somatic mutation rates uncovers drivers of ca
 ![Dig model](https://media.springernature.com/full/springer-static/esm/art%3A10.1038%2Fs41587-022-01353-8/MediaObjects/41587_2022_1353_Fig5_ESM.jpg)
 
 #### Planning
-
-1. Learning the best practice of deep learning pipelines
-
-2. Dataset modules and Document
