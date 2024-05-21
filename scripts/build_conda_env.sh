@@ -20,9 +20,18 @@ pip3 install torch torchvision torchaudio ;
 # check the install cmd for your system : https://scikit-learn.org/stable/install.html
 pip3 install scikit-learn
 
-# more packages
+# more stats packages
 pip3 install numpy pandas matplotlib ;
-pip3 install PyYAML ;
-pip3 install h5py ;
 pip3 install seaborn ;
 pip3 install tqdm ;
+pip3 install scipy statsmodels ;
+
+# python packages
+pip3 install PyYAML ;
+pip3 install h5py ;
+pip3 install pypickle ;
+pip3 install tables ;
+
+# bio packages :
+pip3 install pyBigWig pybbi ;
+pip3 install pysam pybedtools ; 
