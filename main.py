@@ -9,7 +9,7 @@ from models import *
 from datasets import *
 from torch.utils.data import DataLoader
 
-from datasets.PCAWG import PCAWG
+from datasets._PCAWG import PCAWG
 
 def parse_args():
     parser = argparse.ArgumentParser()
