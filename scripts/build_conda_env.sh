@@ -13,7 +13,10 @@ conda activate ${CONDA_ENV_NAME} ;
 # Installing pytorch
 # Stable (2.3.0)/Linux/CUDA 12.1
 # check the install cmd for your system : https://pytorch.org/
-pip3 install torch torchvision torchaudio ;
+# pip3 install torch torchvision torchaudio ;
+conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
+
+pip3 install gpytorch ;
 
 # Installing scikit-learn
 # Linux/pip3
@@ -31,7 +34,10 @@ pip3 install PyYAML ;
 pip3 install h5py ;
 pip3 install pypickle ;
 pip3 install tables ;
+pip3 install tensorboardX ;
 
 # bio packages :
 pip3 install pyBigWig pybbi ;
 pip3 install pysam pybedtools ; 
+
+conda install -c bioconda htslib
