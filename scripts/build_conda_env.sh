@@ -44,5 +44,6 @@ pip3 install pysam pybedtools ;
 conda install --yes -c bioconda htslib ;
 
 # jupyter
-conda install --yes -c anaconda ipykernel ;
+# conda install --yes -c anaconda ipykernel ;
+pip3 install ipykernel
 python -m ipykernel install --user --name=${CONDA_ENV_NAME} ;
