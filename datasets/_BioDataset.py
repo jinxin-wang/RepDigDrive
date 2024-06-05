@@ -1,42 +1,47 @@
 import os
+import h5py
+import logging
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from torch.utils.data import Dataset
 
-class BioDataset(Dataset):
+class BioH5Dataset(Dataset):
     def __init__(
         self, 
+        h5_path: Union[str, Path], 
         raw_path: Union[str, Path], 
-        resolution: int, 
-        preprocess: Callable, 
-        transform:  Optional[Callable] = None,
-        transname: Optional[str] = None
+        logger = logging.getLogger(os.getcwd()),
+        force_download = False,
+        rebuild_h5 = False,
     ) -> None:
         
+        self.h5_path  = Path(h5_path)
         self.raw_path = Path(raw_path)
-        self.resolution = resolution
-        self.preprocessed_path = self.raw_path.parent.joinpath(f"{resolution}").joinpath(self.raw_path.name)
-        if transname:
-            self.transform_path = self.raw_path.parent.joinpath(f"{resolution}").joinpath(transname).joinpath(self.raw_path.name)
-
-        if os.path.isdir():
-            raise Exception("Expect path of file")
-        
-        if not os.path.isfile(self.preprocessed_path):
-            preprocess(self.raw_path, self.preprocessed_path, self.resolution)
-
-        if transform and not os.path.isfile(self.transform_path):
-            transform(self.preprocessed_path, self.transform_path)
-
-
-    def __getitem__(self, index) -> Any:
-        return super().__getitem__(index)
+        self.logger   = logger 
     
-    def __len__(self):
-        # key = self.keys[]
+        if force_download:
+            self.download_rawdata()
+
+        if (not os.path.isfile(self.h5_path)) or rebuild_h5: 
+            self.logger.info(f"h5 dataset [{self.h5_path}] is not found")
+            if not os.path.exists(self.raw_path):
+                self.logger.info(f"raw dataset [{self.raw_path}] is not found. ")
+                self.download_rawdata()
+            self.build_h5()
+
+    # def __getitem__(self, index) -> Any:
+    #     return super().__getitem__(index)
+    
+    # def __len__(self):
+    #     pass
+    
+    def build_h5(self):
         pass
 
+    def download_rawdata(self):
+        pass
+        
 
 class BioDatasetFolder(Dataset):
     def __init__(
