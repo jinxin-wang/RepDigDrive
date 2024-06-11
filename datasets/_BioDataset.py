@@ -192,12 +192,18 @@ class BioBigWigDataset(BioDataset):
                  summary: str = 'mean') -> None:
         
         self.logger.info(f"Building chromosome {chr.name} of {bigwig} to {h5} ")
+        
+        mode = 'a'
         if not os.path.isfile(h5) or self.rebuild_h5:
-            with h5py.File(self.h5_path, 'w') as h5fd:
-                # h5fd.create
-                for rslt in resolutions:
-                    h5fd.create_dataset(name = f"{rslt}", 
-                                        data = self._bigwig2df(bigwig, chr, rslt))
+            mode = 'w'
+
+        with h5py.File(self.h5_path, mode) as h5fd:
+            # h5fd.create
+            for rslt in resolutions:
+                dataset_name = f"{rslt}_{summary}_{self.overlap}"
+
+                h5fd.create_dataset(name = dataset_name, 
+                                    data = self._bigwig2df(bigwig, chr, rslt, summary))
 
 
 class BioMafDataset(BioDataset):
@@ -210,6 +216,8 @@ class BioMafDataset(BioDataset):
         self.dataset_name = "BioMaf"
     
         super().__init__(raw_path = raw_path, logger = logger, force_download = force_download)
+
+        # TODO: build h5 for maf files
 
 class BioBigWigDatasetFolder(Dataset):
     def __init__(
@@ -244,9 +252,3 @@ class BioBigWigDatasetFolder(Dataset):
     
     def __len__(self):
         pass
-
-
-
-from torch import nn
-
-nn.Embedding()
