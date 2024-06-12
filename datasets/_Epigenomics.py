@@ -1,6 +1,8 @@
 import os
 import logging
 
+import h5py
+
 from pathlib import Path
 from _BioDataset import BioBigWigDataset
 
@@ -31,36 +33,37 @@ class RoadmapEpigenomicsDataset(BioBigWigDataset):
 
     mirror = "https://egg2.wustl.edu/roadmap/data/byFileType/signal/consolidated/macs2signal/pval"
 
+    # List of cell line for each epigenomic modification
     DNase   = ["E003", "E004", "E005", "E006", "E007", "E008", "E017", "E021", "E022",
-"E028", "E029", "E032", "E033", "E034", "E046", "E050", "E051", "E055",
-"E056", "E057", "E059", "E080", "E081", "E082", "E083", "E084", "E085",
-"E086", "E088", "E089", "E090", "E091", "E092", "E093", "E094", "E097",
-"E098", "E100", "E109"]
+               "E028", "E029", "E032", "E033", "E034", "E046", "E050", "E051", "E055",
+               "E056", "E057", "E059", "E080", "E081", "E082", "E083", "E084", "E085",
+               "E086", "E088", "E089", "E090", "E091", "E092", "E093", "E094", "E097",
+               "E098", "E100", "E109"]
     
     H3K27ac = ["E003", "E004", "E005", "E006", "E007", "E008", "E011", "E012", "E013",
-"E014", "E015", "E016", "E017", "E019", "E020", "E021", "E022", "E026",
-"E029", "E032", "E034", "E037", "E038", "E039", "E040", "E041", "E042",
-"E043", "E044", "E045", "E046", "E047", "E048", "E049", "E050", "E055",
-"E056", "E058", "E059", "E061", "E062", "E063", "E065", "E066", "E067",
-"E068", "E069", "E071", "E072", "E073", "E074", "E075", "E076", "E078",
-"E079", "E080", "E084", "E085", "E087", "E089", "E090", "E091", "E092", 
-"E093", "E094", "E095", "E096", "E097", "E098", "E099", "E100", "E101",
-"E102", "E103", "E104", "E105", "E106", "E108", "E109", "E111", "E112",
-"E113"]
+               "E014", "E015", "E016", "E017", "E019", "E020", "E021", "E022", "E026",
+               "E029", "E032", "E034", "E037", "E038", "E039", "E040", "E041", "E042",
+               "E043", "E044", "E045", "E046", "E047", "E048", "E049", "E050", "E055",
+               "E056", "E058", "E059", "E061", "E062", "E063", "E065", "E066", "E067",
+               "E068", "E069", "E071", "E072", "E073", "E074", "E075", "E076", "E078",
+               "E079", "E080", "E084", "E085", "E087", "E089", "E090", "E091", "E092", 
+               "E093", "E094", "E095", "E096", "E097", "E098", "E099", "E100", "E101",
+               "E102", "E103", "E104", "E105", "E106", "E108", "E109", "E111", "E112",
+               "E113"]
     
     H3K27me3= ["E001", "E002", "E003", "E004", "E005", "E006", "E007", "E008", "E009", 
-"E010", "E011", "E012", "E013", "E014", "E015", "E016", "E017", "E018",
-"E019", "E020", "E021", "E022", "E023", "E024", "E025", "E026", "E027", 
-"E028", "E029", "E030", "E031", "E032", "E033", "E034", "E035", "E036",
-"E037", "E038", "E039", "E040", "E041", "E042", "E043", "E044", "E045",
-"E046", "E047", "E048", "E049", "E050", "E051", "E052", "E053", "E054",
-"E055", "E056", "E057", "E058", "E059", "E061", "E062", "E063", "E065", 
-"E066", "E067", "E068", "E069", "E070", "E071", "E072", "E073", "E074",
-"E075", "E076", "E077", "E078", "E079", "E080", "E081", "E082", "E083", 
-"E084", "E085", "E086", "E087", "E088", "E089", "E090", "E091", "E092",
-"E093", "E094", "E095", "E096", "E097", "E098", "E099", "E100", "E101", 
-"E102", "E103", "E104", "E105", "E106", "E107", "E108", "E109", "E110",
-"E111", "E112", "E113"]
+               "E010", "E011", "E012", "E013", "E014", "E015", "E016", "E017", "E018",
+               "E019", "E020", "E021", "E022", "E023", "E024", "E025", "E026", "E027", 
+               "E028", "E029", "E030", "E031", "E032", "E033", "E034", "E035", "E036",
+               "E037", "E038", "E039", "E040", "E041", "E042", "E043", "E044", "E045",
+               "E046", "E047", "E048", "E049", "E050", "E051", "E052", "E053", "E054",
+               "E055", "E056", "E057", "E058", "E059", "E061", "E062", "E063", "E065", 
+               "E066", "E067", "E068", "E069", "E070", "E071", "E072", "E073", "E074",
+               "E075", "E076", "E077", "E078", "E079", "E080", "E081", "E082", "E083", 
+               "E084", "E085", "E086", "E087", "E088", "E089", "E090", "E091", "E092",
+               "E093", "E094", "E095", "E096", "E097", "E098", "E099", "E100", "E101", 
+               "E102", "E103", "E104", "E105", "E106", "E107", "E108", "E109", "E110",
+               "E111", "E112", "E113"]
     
     H3K36me3= ["E001", "E002", "E003", "E004", "E005", "E006", "E007", "E008", "E009",
                "E010", "E011", "E012", "E013", "E014", "E015", "E016", "E017", "E018",
@@ -138,15 +141,21 @@ class RoadmapEpigenomicsDataset(BioBigWigDataset):
         raw_path: Union[str, Path], 
         resolutions: list[int],
         overlap : int = 0,
+        h5_chunk_size: int = 100,
         logger = logging.getLogger(os.getcwd()),
         force_download = False,
         rebuild_h5 = False,
+        design_epig_mod: List[str] = ['DNase', 'H3K27ac', 'H3K27me3', 'H3K36me3', 'H3K4me1', 'H3K4me3', 'H3K9ac', 'H3K9me3'],
         preprocess: Optional[Callable] = None, 
         transform:  Optional[Callable] = None
     ) -> None:
         
         self.dataset_name = "Roadmap Epigenomics"
-        self.source_list = [ f"{self.mirror}/{cell_line}-{k.name}.pval.signal.bigwig" for k in self.resources for cell_line in self.resources[k] ]
+        self.h5_chunk_size= h5_chunk_size
+        self.design_epig_mod = design_epig_mod
+        
+        # list of download resources, only for choosen types of epigenomic modifications
+        self.source_list = [ f"{self.mirror}/{cell_line}-{self.EpigMod[k].name}.pval.signal.bigwig" for k in self.design_epig_mod for cell_line in self.resources[self.EpigMod[k]] ]
 
         super().__init__(h5_path = h5_path, 
           raw_path=raw_path, 
@@ -159,14 +168,20 @@ class RoadmapEpigenomicsDataset(BioBigWigDataset):
         self.preprocess= preprocess
         self.transform = transform
 
-        for epig_mod in self.resources:
-            self.build_epig_mod(epig_mod)
+        self.data = {}
 
-    def build_epig_mod(epig_mod: str):
+        for epig_mod in self.resources:
+            epig_mod_h5path = self.build_chunked_epig_mod(epig_mod)
+            self.data[epig_mod] = h5py.File(epig_mod_h5path, 'r')
+
+        # self.data_h5fd = h5py.File(self.h5_path, )
+
+    def build_chunked_epig_mod(epig_mod: EpigMod) -> Path:
+
         pass
 
     def __getitem__(self, index) -> Any:
-        if not self.transform is None:
+        if self.transform is not None:
             pass
     
     def __len__(self):
