@@ -10,15 +10,49 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 class ReplicationTimingDataset(BioBigWigDataset):
 
-    mirror = "https://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability"
+    """
+    For each cell type, this track contains the following views:
+
+    Percentage-normalized Signal: (view: PctSignal)
+        Replication signal at 1 kb intervals as a percentage of normalized +/-25 kb tag densities for all cell cycle fractions (G1/G1b, S1, S2, S3, S4, G2).
+
+    *Wavelet-smoothed Signal: (view: WaveSignal)
+        Wavelet-smoothed transform of the six fraction profile that is a weighted average of the percentage-normalized signals such that earlier replication has higher values.
+
+    Peaks: (view: Peaks)
+        Local maxima in the wavelet-smoothed signal data corresponding to replication initiation (replication origin) zones.
+
+    Valleys: (view: Valleys)
+        Local minima in the wavelet-smoothed signal data corresponding to replication termination zones.
+
+    *Summed Densities: (view: SumSignal)
+        A measure of relative copy number at each genomic location that is the sum of normalized tag densities for each cell cycle fraction.
+
+    More details about replication timing dataset, please refer to : https://genome.ucsc.edu/cgi-bin/hgTables?db=hg19&hgta_group=regulation&hgta_track=wgEncodeUwRepliSeq&hgta_table=wgEncodeUwRepliSeqImr90S3PctSignalRep1&hgta_doSchema=describe+table+schema
+    """
+
+    mirror = "https://hgdownload-test.gi.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeUwRepliSeq"
     
-    class WINSIZE(Enum):
-        Align24mer = 24
-        Align36mer = 36
-        Align40mer = 40
-        Align50mer = 50
-        Align75mer = 75
-        Align100mer= 100
+    class RepliSeqSignal(Enum):
+        WaveSignal= 0
+        SumSignal = 1
+
+    class RepliSeqCell(Enum):
+        BG02ES = 'Bg02es'
+        BJ     = 'Bj'
+        GM06990= 'Gm06990'
+        GM12801= 'Gm12801'
+        GM12812= 'Gm12812'
+        GM12813= 'Gm12813'
+        GM12878= 'Gm12878'
+        HUVEC  = 'Huvec'
+        HeLaS3 = 'Helas3'
+        HepG2  = 'Hepg2'
+        IMR90  = 'Imr90'
+        K562   = 'K562'
+        MCF7   = 'Mcf7'
+        NHEK   = 'Nhek'
+        SKNSH  = 'Sknsh'
 
     def __init__(
         self, 
@@ -30,32 +64,34 @@ class ReplicationTimingDataset(BioBigWigDataset):
         logger = logging.getLogger(os.getcwd()),
         force_download = False,
         rebuild_h5 = False,
-        design_mers: List[int] = [24, 36, 40, 50, 75, 100],
+        design_signals: List[int] = [0,1],
         preprocess: Optional[Callable] = None, 
         transform:  Optional[Callable] = None
     ) -> None:
         
-        self.h5_chunk_size= h5_chunk_size
-        self.dataset_name = "Mappability"
-        self.design_mers = design_mers
+        self.dataset_name = "ReplicationTiming"
+        self.design_signals = design_signals
         self.preprocess = preprocess
         self.transform  = transform
-        self.source_list  = [ f"{self.mirror}/{self._bigwig_fname(self.WINSIZE(alg).name)}" for alg in self.design_mers ] 
+        self.source_list  = [ f"{self.mirror}/{self._bigwig_fname(self.RepliSeqSignal(s).name, c.value)}" for c in self.RepliSeqCell for s in self.design_signals ] 
+
+        list.sort(resolutions)
 
         super().__init__(h5_path = h5_path, 
                          raw_path=raw_path, 
-                         resolutions=resolutions,
-                         overlap=overlap,
-                         logger=logger,
-                         force_download=force_download,
-                         rebuild_h5=rebuild_h5)
+                         resolutions = resolutions,
+                         overlap = overlap,
+                         h5_chunk_size = h5_chunk_size,
+                         logger = logger,
+                         force_download = force_download,
+                         rebuild_h5 = rebuild_h5)
         
         self.mapp_h5_fname = self.h5_path.joinpath(f"{self.dataset_name}.h5")
 
         mode = 'a'
         if rebuild_h5:
             mode = 'w'
-
+        #######################################
         with h5py.File(self.mapp_h5_fname, mode=mode) as h5fd:
             for rslt in self.resolutions:
                 dataset_name = self._dataset_name(rslt, self.overlap) 
@@ -68,8 +104,8 @@ class ReplicationTimingDataset(BioBigWigDataset):
         if self.preprocess is not None:
             self.preprocess(self.mapp_h5_fname)
 
-    def _bigwig_fname(self, key):
-        return f"wgEncodeCrgMapability{key}.bigWig"
+    def _bigwig_fname(self, cell: str, signal: str, replicate: int = 1):
+        return f"wgEncodeUwRepliSeq{cell}{signal}Rep{replicate}.bigWig"
 
     def _h5_fname_to_mer(self, h5_fname: Path):
         """
