@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import bbi
 import h5py
@@ -131,6 +132,34 @@ class BioBigWigDataset(BioDataset):
         # chrY  = 24
         # chrM  = 25
 
+    BigWigChromSizes = {
+        'chr1': 249250621,        
+        'chr2': 243199373,
+        'chr3': 198022430,
+        'chr4': 191154276,
+        'chr5': 180915260,
+        'chr6': 171115067,
+        'chr7': 159138663,
+        'chr8': 146364022,
+        'chr9': 141213431,
+        'chr10': 135534747,
+        'chr11': 135006516,
+        'chr12': 133851895,
+        'chr13': 115169878,
+        'chr14': 107349540,
+        'chr15': 102531392,
+        'chr16': 90354753,
+        'chr17': 81195210,
+        'chr18': 78077248,
+        'chr19': 59128983,
+        'chr20': 63025520,
+        'chr21': 48129895,
+        'chr22': 51304566,
+        # 'chrM': 16571,
+        'chrX': 155270560,
+        # 'chrY': 59373566
+    }
+
     class H5Attrs(Enum):
         COLUMNS   = 'columns'
         INDEX     = 'index'
@@ -142,16 +171,18 @@ class BioBigWigDataset(BioDataset):
         std  = 'std'
         cov  = 'cov' # coverage
 
-        start= 0
-        end  = 1
-        summary = 2
-
+        chrom= 0
+        start= 1
+        end  = 2
+        summary= 3
+    
     def __init__(
         self, 
         h5_path: Union[str, Path], 
         raw_path: Union[str, Path], 
         resolutions: list[int],
         overlap : int = 0,
+        h5_chunk_size: int = 100,
         summary : Union[str, List[str]] = 'mean',
         logger = logging.getLogger(os.getcwd()),
         force_download = False,
@@ -164,6 +195,7 @@ class BioBigWigDataset(BioDataset):
 
         self.resolutions = resolutions
         self.overlap = overlap
+        self.h5_chunk_size= h5_chunk_size
 
         # will raise exception if summary function name is not in enum
         self.summary = [ self.BigWigSummary(s).value for s in np.array([summary]).reshape(-1).tolist() ]
@@ -181,7 +213,30 @@ class BioBigWigDataset(BioDataset):
                           resolutions = self.resolutions) 
 
     def _h5_fname(self, bigwig_fname: str) -> Path:
-        return self.h5_path.joinpath(bigwig_fname.replace('bigwig','h5'))
+        # replace bigwig by ignoring cases
+        h5_fname = re.compile('bigwig', re.IGNORECASE).sub('h5', bigwig_fname)
+        return self.h5_path.joinpath(h5_fname)
+
+    def _best_cover(self, start_position: int, end_position: int, chm_size: int, resolution: int):
+        """
+        return the best centralized chunked region which cover the given interval
+        """
+        mid = np.mean([start_position, end_position])
+        start = mid - resolution*self.h5_chunk_size /2 
+        start = max(0,start)
+        end   = start + resolution
+        end_position   = int(np.rint(min(chm_size, end)))
+        start_position = end_position - resolution
+        return start_position, end_position
+
+    def _build_position_encoding(self, chm: int, start_position: int, end_position: int, rslt: int, df_len: int):
+        # add position encoding (chrom, start, end)
+        assert (start_position-end_position)/rslt == df_len
+        position_df = pd.DataFrame(np.zeros((df_len, 3)), columns=[self.BigWigSummary(i).name for i in range(3)])
+        position_df[self.BigWigSummary.chrom.name] = chm
+        position_df[self.BigWigSummary.start.name] = np.arange(start_position, end_position, rslt)
+        position_df[self.BigWigSummary.end.name]   = np.arange(start_position + rslt, end_position + rslt, rslt)
+
 
     def _bigwig2df(self, 
                    bigwig: Path, 
@@ -191,14 +246,22 @@ class BioBigWigDataset(BioDataset):
         ) -> pd.DataFrame:
 
         with bbi.open(bigwig) as epig_fd :
-            chr_size = epig_fd.chromsizes[chr]
+            # chr_size = epig_fd.chromsizes[chr]
+            chr_size = self.BigWigChromSizes[chr]
             self.logger.info(f"{chr.name}, length {chr_size}")
             starts = np.arange(0, chr_size, resolution - self.overlap)
             ends   = starts + resolution
             chrs   = np.array([chr.name] * len(starts))
             values = [ epig_fd.stackup(chrs, starts, ends, bins=1, summary = s).reshape(-1).tolist() for s in summary ]
+
             # epig_df= pd.DataFrame(np.array([chrs, starts, ends, *values]).T, columns=['chrom','start','end', *summary])
-            epig_df= pd.DataFrame(np.array([starts, ends, *values]).T, columns=[self.BigWigSummary.start.name,self.BigWigSummary.end.name, *summary])
+            # epig_df= pd.DataFrame(np.array([starts, ends, *values]).T, columns=[self.BigWigSummary.start.name,self.BigWigSummary.end.name, *summary])
+
+            # bigwig always provides the same chromosome sizes, so within same resolution, 
+            # to count from position 0 will always gives the same index
+            # don't have to always save start and end position
+            epig_df= pd.DataFrame(np.array(values).T, columns=summary)
+
         return epig_df
 
     def _dataset_name(self, rslt: int, overlap: int) -> str:
