@@ -58,22 +58,27 @@ class ReplicationTimingDataset(BioBigWigDataset):
         self, 
         h5_path: Union[str, Path], 
         raw_path: Union[str, Path], 
-        resolutions: list[int] = [10000, 100000],
+        resolutions: List[int] = [10000, 100000],
         overlap : int = 0,
         h5_chunk_size: int = 100,
         logger = logging.getLogger(os.getcwd()),
         force_download = False,
         rebuild_h5 = False,
         design_signals: List[int] = [0,1],
+        design_cells: List[str] | str = 'all',
         preprocess: Optional[Callable] = None, 
         transform:  Optional[Callable] = None
     ) -> None:
         
         self.dataset_name = "ReplicationTiming"
-        self.design_signals = design_signals
+        self.design_signals = [ self.RepliSeqSignal(s) for s in design_signals ]
+        if design_cells == 'all':
+            self.design_cells = [ c for c in self.RepliSeqCell ]
+        else:
+            self.design_cells = [ self.RepliSeqCell(c) for c in design_cells ]
         self.preprocess = preprocess
         self.transform  = transform
-        self.source_list  = [ f"{self.mirror}/{self._bigwig_fname(self.RepliSeqSignal(s).name, c.value)}" for c in self.RepliSeqCell for s in self.design_signals ] 
+        self.source_list  = [ f"{self.mirror}/{self._bigwig_fname(s.name, c.value)}" for c in self.RepliSeqCell for s in self.design_signals ] 
 
         list.sort(resolutions)
 
@@ -86,36 +91,41 @@ class ReplicationTimingDataset(BioBigWigDataset):
                          force_download = force_download,
                          rebuild_h5 = rebuild_h5)
         
-        self.mapp_h5_fname = self.h5_path.joinpath(f"{self.dataset_name}.h5")
+        self.rep_h5_fname = self.h5_path.joinpath(f"{self.dataset_name}.h5")
 
         mode = 'a'
         if rebuild_h5:
             mode = 'w'
-        #######################################
-        with h5py.File(self.mapp_h5_fname, mode=mode) as h5fd:
+
+        h5fd_dict = {}
+        for signal in self.design_signals:
+            for cell in self.design_cells:
+                h5 = self._h5_fname(self._bigwig_fname(cell, signal))
+                k  = self._bigwig_fname_key(cell, signal)
+                h5fd_dict[k] = h5py.File(h5, 'r')
+
+        with h5py.File(self.rep_h5_fname, mode=mode) as h5fd:
             for rslt in self.resolutions:
                 dataset_name = self._dataset_name(rslt, self.overlap) 
                 for chr in self.BigWigChm:
                     if self.rebuild_h5 or chr.name not in h5fd.keys() or dataset_name not in h5fd[chr.name].keys() :
-                        # open designed h5 files 
-                        h5fd_dict = { self._h5_fname_to_mer(h5): h5py.File(h5, 'r') for h5 in self.h5_list if self._h5_fname_to_mer(h5).value in self.design_mers }
                         self._concat_summary_table(h5fd, h5fd_dict, chr, rslt, overlap)
         
+        for k in h5fd_dict:
+            h5fd_dict[k].close()
+
         if self.preprocess is not None:
-            self.preprocess(self.mapp_h5_fname)
+            self.preprocess(self.rep_h5_fname)
+
+    def _bigwig_fname_key(self, cell: str, signal: str, replicate: int = 1):
+        return f"{cell}{signal}Rep{replicate}"
 
     def _bigwig_fname(self, cell: str, signal: str, replicate: int = 1):
-        return f"wgEncodeUwRepliSeq{cell}{signal}Rep{replicate}.bigWig"
-
-    def _h5_fname_to_mer(self, h5_fname: Path):
-        """
-        given filename, return mer enum element
-        """
-        return self.WINSIZE(int(h5_fname.name.split('mer')[0].replace('wgEncodeCrgMapabilityAlign','')))
+        return f"wgEncodeUwRepliSeq{self._bigwig_fname_key(cell, signal, replicate)}.bigWig"
 
     def _concat_summary_table(self, 
                               tgt_h5fd: h5py.File, 
-                              src_h5fd_dict: dict[WINSIZE, h5py.File], 
+                              src_h5fd_dict: Dict[str, h5py.File], 
                               chr: str, 
                               rslt: int, 
                               overlap: int
@@ -123,9 +133,9 @@ class ReplicationTimingDataset(BioBigWigDataset):
 
         L = -1
 
-        for mer in src_h5fd_dict:
+        for k in src_h5fd_dict:
             # check if the summary tables have same length
-            ds = src_h5fd_dict[mer][self._dataset_fullname(chr, rslt, overlap)]
+            ds = src_h5fd_dict[k][self._dataset_fullname(chr, rslt, overlap)]
             if L < 0 :
                 assert ds.shape[0] > 0
                 L = ds.shape[0]

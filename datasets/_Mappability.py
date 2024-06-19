@@ -15,7 +15,7 @@ class MappabilityDataset(BioBigWigDataset):
 
     mirror = "https://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeMapability"
     
-    class WINSIZE(Enum):
+    class MER(Enum):
         Align24mer = 24
         Align36mer = 36
         Align40mer = 40
@@ -42,7 +42,7 @@ class MappabilityDataset(BioBigWigDataset):
         self.design_mers = design_mers
         self.preprocess = preprocess
         self.transform  = transform
-        self.source_list  = [ f"{self.mirror}/{self._bigwig_fname(self.WINSIZE(alg).name)}" for alg in self.design_mers ] 
+        self.source_list  = [ f"{self.mirror}/{self._bigwig_fname(self.MER(num).name)}" for num in self.design_mers ] 
 
         list.sort(resolutions)
 
@@ -82,6 +82,8 @@ class MappabilityDataset(BioBigWigDataset):
                         # open designed h5 files 
                         h5fd_dict = { self._h5_fname_to_mer(h5): h5py.File(h5, 'r') for h5 in self.h5_list if self._h5_fname_to_mer(h5).value in self.design_mers }
                         self._concat_summary_table(h5fd, h5fd_dict, chr, rslt, self.overlap)
+                        for k in h5fd_dict:
+                            h5fd_dict[k].close()
 
     def _bigwig_fname(self, key):
         return f"wgEncodeCrgMapability{key}.bigWig"
@@ -90,11 +92,11 @@ class MappabilityDataset(BioBigWigDataset):
         """
         given filename, return mer enum element
         """
-        return self.WINSIZE(int(h5_fname.name.split('mer')[0].replace('wgEncodeCrgMapabilityAlign','')))
+        return self.MER(int(h5_fname.name.split('mer')[0].replace('wgEncodeCrgMapabilityAlign','')))
 
     def _concat_summary_table(self, 
                               tgt_h5fd: h5py.File, 
-                              src_h5fd_dict: dict[WINSIZE, h5py.File], 
+                              src_h5fd_dict: dict[MER, h5py.File], 
                               chr: str, 
                               rslt: int, 
                               overlap: int
