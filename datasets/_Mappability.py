@@ -3,7 +3,7 @@ import logging
 import h5py
 
 from pathlib import Path
-# from _BioDataset 
+from logging import Logger
 from datasets import BioBigWigDataset
 
 from enum import Enum
@@ -28,12 +28,13 @@ class MappabilityDataset(BioBigWigDataset):
         resolutions: list[int] = [10000, 100000],
         overlap : int = 0,
         h5_chunk_size: int = 100,
-        logger = logging.getLogger(os.getcwd()),
+        logger: Union[str, Logger] = logging.getLogger(),
         force_download = False,
         rebuild_h5 = False,
         design_mers: List[int] = [24, 36, 40, 50, 75, 100],
         preprocess: Optional[Callable] = None, 
-        transform:  Optional[Callable] = None
+        transform:  Optional[Callable] = None,
+        lazy_load:  bool = True
     ) -> None:
         
         self.dataset_name = "Mappability"
@@ -49,7 +50,9 @@ class MappabilityDataset(BioBigWigDataset):
                          force_download = force_download,
                          rebuild_h5 = rebuild_h5,
                          preprocess = preprocess,
-                         transform  = transform)
+                         transform  = transform,
+                         lazy_load  = lazy_load)
+
 
     def build_h5_summary(self):
         mode = 'a'

@@ -3,6 +3,7 @@ import logging
 import h5py
 
 from pathlib import Path
+from logging import Logger
 from datasets import BioBigWigDataset
 
 from enum import Enum
@@ -61,13 +62,14 @@ class ReplicationTimingDataset(BioBigWigDataset):
         resolutions: List[int] = [10000, 100000],
         overlap : int = 0,
         h5_chunk_size: int = 100,
-        logger = logging.getLogger(os.getcwd()),
+        logger: Union[str, Logger] = logging.getLogger(),
         force_download = False,
         rebuild_h5 = False,
         design_signals: List[int] = [0,1],
         design_cells: List[str] | str = 'all',
         preprocess: Optional[Callable] = None, 
-        transform:  Optional[Callable] = None
+        transform:  Optional[Callable] = None,
+        lazy_load:  bool = True
     ) -> None:
         
         self.dataset_name = "ReplicationTiming"
@@ -89,7 +91,9 @@ class ReplicationTimingDataset(BioBigWigDataset):
                          force_download = force_download,
                          rebuild_h5 = rebuild_h5,
                          preprocess = preprocess,
-                         transform  = transform)
+                         transform  = transform,
+                         lazy_load  = lazy_load)
+
 
     def build_h5_summary(self):
         mode = 'a'

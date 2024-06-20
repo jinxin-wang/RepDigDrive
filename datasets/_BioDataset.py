@@ -16,8 +16,9 @@ from pathlib import Path
 from abc import abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-
 from torch.utils.data import Dataset
+
+from mini_utils import enum_value_list, enum_name_list
 
 class BioDataset(Dataset):
 
