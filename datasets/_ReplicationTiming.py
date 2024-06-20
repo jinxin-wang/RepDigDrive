@@ -3,7 +3,7 @@ import logging
 import h5py
 
 from pathlib import Path
-from _BioDataset import BioBigWigDataset
+from datasets import BioBigWigDataset
 
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -76,11 +76,9 @@ class ReplicationTimingDataset(BioBigWigDataset):
             self.design_cells = [ c for c in self.RepliSeqCell ]
         else:
             self.design_cells = [ self.RepliSeqCell(c) for c in design_cells ]
-        self.preprocess = preprocess
-        self.transform  = transform
-        self.source_list  = [ f"{self.mirror}/{self._bigwig_fname(s.name, c.value)}" for c in self.RepliSeqCell for s in self.design_signals ] 
+        self.source_list  = [ f"{self.mirror}/{self._bigwig_fname(cell=c,signal=s)}" for c in self.design_cells for s in self.design_signals ] 
 
-        list.sort(resolutions)
+        logger.debug(f"sources list: {self.source_list}")
 
         super().__init__(h5_path = h5_path, 
                          raw_path=raw_path, 
@@ -89,82 +87,39 @@ class ReplicationTimingDataset(BioBigWigDataset):
                          h5_chunk_size = h5_chunk_size,
                          logger = logger,
                          force_download = force_download,
-                         rebuild_h5 = rebuild_h5)
-        
-        self.rep_h5_fname = self.h5_path.joinpath(f"{self.dataset_name}.h5")
+                         rebuild_h5 = rebuild_h5,
+                         preprocess = preprocess,
+                         transform  = transform)
 
+    def build_h5_summary(self):
         mode = 'a'
-        if rebuild_h5:
+        if self.rebuild_h5:
             mode = 'w'
 
         h5fd_dict = {}
+        
         for signal in self.design_signals:
             for cell in self.design_cells:
                 h5 = self._h5_fname(self._bigwig_fname(cell, signal))
                 k  = self._bigwig_fname_key(cell, signal)
                 h5fd_dict[k] = h5py.File(h5, 'r')
 
-        with h5py.File(self.rep_h5_fname, mode=mode) as h5fd:
+        self.logger.info(f"start building summary: {self.summary_h5_fname}")
+        with h5py.File(self.summary_h5_fname, mode=mode) as h5fd:
             for rslt in self.resolutions:
                 dataset_name = self._dataset_name(rslt, self.overlap) 
                 for chr in self.BigWigChm:
                     if self.rebuild_h5 or chr.name not in h5fd.keys() or dataset_name not in h5fd[chr.name].keys() :
-                        self._concat_summary_table(h5fd, h5fd_dict, chr, rslt, overlap)
-        
+                        self._concat_summary_table(h5fd, h5fd_dict, chr, rslt, self.overlap)
+
         for k in h5fd_dict:
             h5fd_dict[k].close()
 
-        if self.preprocess is not None:
-            self.preprocess(self.rep_h5_fname)
+    def _bigwig_fname_key(self, cell: RepliSeqCell, signal: RepliSeqSignal, replicate: int = 1):
+        return f"{cell.value}{signal.name}Rep{replicate}"
 
-    def _bigwig_fname_key(self, cell: str, signal: str, replicate: int = 1):
-        return f"{cell}{signal}Rep{replicate}"
-
-    def _bigwig_fname(self, cell: str, signal: str, replicate: int = 1):
+    def _bigwig_fname(self, cell: RepliSeqCell, signal: RepliSeqSignal, replicate: int = 1):
         return f"wgEncodeUwRepliSeq{self._bigwig_fname_key(cell, signal, replicate)}.bigWig"
-
-    def _concat_summary_table(self, 
-                              tgt_h5fd: h5py.File, 
-                              src_h5fd_dict: Dict[str, h5py.File], 
-                              chr: str, 
-                              rslt: int, 
-                              overlap: int
-        ) -> h5py.File :
-
-        L = -1
-
-        for k in src_h5fd_dict:
-            # check if the summary tables have same length
-            ds = src_h5fd_dict[k][self._dataset_fullname(chr, rslt, overlap)]
-            if L < 0 :
-                assert ds.shape[0] > 0
-                L = ds.shape[0]
-
-            else :
-                assert L == ds.shape[0]
-                columns_count += ds.shape[1]
-        
-        # create chunked dataset
-        tgt_h5fd.create_dataset(name=self._dataset_fullname(chr, rslt, overlap), 
-                            shape=(L, columns_count), 
-                            chunks=(self.h5_chunk_size, columns_count), 
-                            dtype=float)
-
-        # update to tgt_h5fd dataset one by one, since each one can be very large
-        column_names = []
-        columns_idx  = 0
-        for mer, fd in src_h5fd_dict.items():
-            ds = fd[self._dataset_fullname(chr, rslt, overlap)]
-            attrs = fd.attrs[self.H5Attrs.COLUMNS.value]
-            column_names += [ f"{mer}_{s}" for s in attrs ]
-            tgt_h5fd[self._dataset_fullname(chr,rslt,overlap)][:,columns_idx: columns_idx + ds.shape[1]] = ds[:]
-            columns_idx += ds.shape[1]
-
-        tgt_h5fd.attrs[self.H5Attrs.COLUMNS.value] = column_names
-        return tgt_h5fd
-        
-
-
 
 # addr_list = ["https://hgdownload-test.gi.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeUwRepliSeq/wgEncodeUwRepliSeqBg02esWaveSignalRep1.bigWig",
 #             "https://hgdownload-test.gi.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeUwRepliSeq/wgEncodeUwRepliSeqBjWaveSignalRep2.bigWig",

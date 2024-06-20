@@ -1,5 +1,5 @@
 import numpy as np
-from config.ConfigSingleton import DatasetsConfigFactory
+from config._log import DatasetsConfigFactory
 
 from torch.utils.data import Dataset
 from typing import Any, Callable, Dict, List, Optional, Tuple
