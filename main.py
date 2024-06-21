@@ -34,8 +34,10 @@ logger = logFactory.getLogger('development')
 # bioDataset_path = root_path.joinpath("RepDigDriver/Test/Datasets/BioDataset")
 # h5Dataset_path  = root_path.joinpath("RepDigDriver/Test/Datasets/BioDataset/h5")
 
-bioDataset_path = DatasetConfig.getDatasetPath('Epigenomics', 'download')
-h5Dataset_path  = DatasetConfig.getDatasetPath('Epigenomics', 'h5')
+datasetConfig = DatasetConfig()
+
+bioDataset_path = datasetConfig.getDatasetPath('Epigenomics', 'download')
+h5Dataset_path  = datasetConfig.getDatasetPath('Epigenomics', 'h5')
 
 # BioDataset(raw_path=bioDataset_path, 
 #            logger=logger,
