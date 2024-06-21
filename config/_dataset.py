@@ -1,4 +1,5 @@
 import yaml
+from pathlib import Path
 
 from mini_utils import Singleton
 
@@ -11,9 +12,14 @@ class DatasetConfig(object):
         with open(self.config_file, 'r') as fd:
             self.config = yaml.safe_load(fd)
 
-    def getConfigAttr(self, name):
-        return self.config[name]
+    def getDatasetRoot(self):
+        return Path(self.config["root"])
     
+    def getDatasetPath(self, name: str, sub: str):
+        root = self.getDatasetRoot()
+        dspath = root.joinpath(self.config[name][sub])
+        return dspath
+
     def getDatasetNames(self):
         return list(self.config.keys())
 

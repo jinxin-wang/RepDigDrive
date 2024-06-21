@@ -30,9 +30,12 @@ logFactory = LogSingletonFactory()
 
 logger = logFactory.getLogger('development')
 
-root_path = Path('/home/raf/Workspace/')
-bioDataset_path = root_path.joinpath("RepDigDriver/Test/Datasets/BioDataset")
-h5Dataset_path  = root_path.joinpath("RepDigDriver/Test/Datasets/BioDataset/h5")
+# root_path = Path('/home/raf/Workspace/')
+# bioDataset_path = root_path.joinpath("RepDigDriver/Test/Datasets/BioDataset")
+# h5Dataset_path  = root_path.joinpath("RepDigDriver/Test/Datasets/BioDataset/h5")
+
+bioDataset_path = DatasetConfig.getDatasetPath('Epigenomics', 'download')
+h5Dataset_path  = DatasetConfig.getDatasetPath('Epigenomics', 'h5')
 
 # BioDataset(raw_path=bioDataset_path, 
 #            logger=logger,
