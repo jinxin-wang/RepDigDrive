@@ -169,7 +169,7 @@ class RoadmapEpigenomicsDataset(BioBigWigDataset):
         logger: Union[str, Logger] = logging.getLogger(),
         force_download = False,
         rebuild_h5 = False,
-        design_epig_modi: List[str] = ['DNase', 'H3K27ac', 'H3K27me3', 'H3K36me3', 'H3K4me1', 'H3K4me3', 'H3K9ac', 'H3K9me3'],
+        design_epig_modi: List[str] | str = 'all',
         design_cell_line: List[int] | str = 'all',
         preprocess: Optional[Callable] = None, 
         transform:  Optional[Callable] = None,
@@ -178,7 +178,12 @@ class RoadmapEpigenomicsDataset(BioBigWigDataset):
         
         self.dataset_name = "Epigenomics"
         self.h5_chunk_size= h5_chunk_size
-        self.design_epig_modi = [ self.EpigMod[m] for m in design_epig_modi ]
+        if design_epig_modi == 'all':
+            # ['DNase', 'H3K27ac', 'H3K27me3', 'H3K36me3', 'H3K4me1', 'H3K4me3', 'H3K9ac', 'H3K9me3']
+            self.design_epig_modi = list(self.EpigMod.values())
+        else:
+            self.design_epig_modi = [ self.EpigMod[m] for m in design_epig_modi ]
+
         self.design_cell_line = design_cell_line
 
         self.source_list = []
@@ -209,19 +214,33 @@ class RoadmapEpigenomicsDataset(BioBigWigDataset):
         if self.rebuild_h5:
             mode = 'w'
 
-        # open designed h5 files 
-        h5fd_dict = { self._h5_fname_to_mer(h5).name: h5py.File(h5, 'r') for h5 in self.h5_list if self._h5_fname_to_mer(h5) in self.design_mers }
+        for epig_modi in self.design_epig_modi: 
+            h5fd_dict = {}
+            epig_modi_name = epig_modi.__class__.__name__
 
-        self.logger.info(f"start building summary: {self.summary_h5_fname}")
-        with h5py.File(self.summary_h5_fname, mode=mode) as h5fd:
-            for rslt in self.resolutions:
-                dataset_name = self._dataset_name(rslt, self.overlap) 
-                for chr in self.BigWigChm:
-                    if self.rebuild_h5 or chr.name not in h5fd.keys() or dataset_name not in h5fd[chr.name].keys() :
-                        self._concat_summary_table(h5fd, h5fd_dict, chr, rslt, self.overlap) 
+            if self.design_cell_line == 'all':
+                epig_modi = enum_elt_list(epig_modi)
+            else: 
+                epig_modi = [ epig_modi(c)  for c in self.design_cell_line if c in enum_value_list(epig_modi) ]
 
-        for k in h5fd_dict:
-            h5fd_dict[k].close()
+            for epig_cell_line in epig_modi:
+                bigwig_fname = self._bigwig_fname(epig_cell_line)
+                bigwig_fname = self.raw_path.joinpath(bigwig_fname)
+                h5_fname     = self._h5_fname(bigwig_fname.name)
+                ds_key = f"{epig_modi_name}_{epig_cell_line.name}"
+                h5fd_dict[ds_key] = h5py.File(h5_fname, 'r') 
+
+            self.logger.info(f"start building summary: {self.summary_h5_fname}")
+            with h5py.File(self.summary_h5_fname, mode=mode) as h5fd:
+                for rslt in self.resolutions:
+                    dataset_name = self._dataset_name(rslt, self.overlap) 
+                    for chr in self.BigWigChm:
+                        ############# TODO: Rewrite the logic 
+                        if self.rebuild_h5 or chr.name not in h5fd.keys() or dataset_name not in h5fd[chr.name].keys() :
+                            self._concat_summary_table(h5fd, h5fd_dict, chr, rslt, self.overlap) 
+
+            for k in h5fd_dict:
+                h5fd_dict[k].close()
 
     def _bigwig_track_key(self, cell_line: Enum, epig_modi: str):
         return f"{cell_line.name}-{epig_modi}"
