@@ -12,11 +12,11 @@ class DatasetConfig(object):
         with open(self.config_file, 'r') as fd:
             self.config = yaml.safe_load(fd)
 
-    def getDatasetRoot(self):
-        return Path(self.config["root"])
+    def getDatasetRoot(self, sub):
+        return Path(self.config["root"][sub])
     
     def getDatasetPath(self, name: str, sub: str):
-        root = self.getDatasetRoot()
+        root = self.getDatasetRoot(sub)
         dspath = root.joinpath(self.config[name][sub])
         return dspath
 
