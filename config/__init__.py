@@ -1,3 +1,5 @@
-from config._log import LogSingletonFactory
+from ._log import LogSingletonFactory
+from ._dataset import DatasetConfig
 
-__all__ = ("LogSingletonFactory")
+__all__ = ("LogSingletonFactory",
+           "DatasetConfig")

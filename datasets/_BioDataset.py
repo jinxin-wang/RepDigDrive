@@ -281,26 +281,24 @@ class BioBigWigDataset(BioDataset):
         position_df[self.BigWigSummary.end.name]   = np.arange(start_position + rslt, end_position + rslt, rslt)
 
     def _bigwig2df(self, 
-                   bigwig: Path, 
+                   bigwig_fd, 
                    chr: BigWigChm, 
                    resolution: int, 
                    summary: List[BigWigSummary]
         ) -> pd.DataFrame:
 
-        self.logger.info(f"Open BigWig file: {bigwig}")
-        with bbi.open(str(bigwig)) as epig_fd :
-            # chr_size = epig_fd.chromsizes[chr]
-            chr_size = self.BigWigChromSizes[chr]
-            self.logger.info(f"{chr.name}, length {chr_size}")
-            starts = np.arange(0, chr_size, resolution - self.overlap)
-            ends   = starts + resolution
-            chrs   = np.array([chr.name] * len(starts))
-            self.logger.info(f"summary functions: {[ s.value for s in summary ]}")
-            values = [ epig_fd.stackup(chrs, starts, ends, bins=1, summary = s.value).reshape(-1).tolist() for s in summary ]
-            # bigwig always provides the same chromosome sizes, so within same resolution, 
-            # to count from position 0 will always gives the same index
-            # don't have to always save start and end position
-            epig_df= pd.DataFrame(np.array(values).T, columns=[s.value for s in summary])
+        # chr_size = epig_fd.chromsizes[chr]
+        chr_size = self.BigWigChromSizes[chr]
+        self.logger.info(f"{chr.name}, length {chr_size}")
+        starts = np.arange(0, chr_size, resolution - self.overlap)
+        ends   = starts + resolution
+        chrs   = np.array([chr.name] * len(starts))
+        self.logger.info(f"summary functions: {[ s.value for s in summary ]}")
+        values = [ bigwig_fd.stackup(chrs, starts, ends, bins=1, summary = s.value).reshape(-1).tolist() for s in summary ]
+        # bigwig always provides the same chromosome sizes, so within same resolution, 
+        # to count from position 0 will always gives the same index
+        # don't have to always save start and end position
+        epig_df= pd.DataFrame(np.array(values).T, columns=[s.value for s in summary])
 
         return epig_df
 
@@ -323,18 +321,20 @@ class BioBigWigDataset(BioDataset):
             pathlib.Path.mkdir(h5.parent, exist_ok=True, parents=True)
             mode = 'w'
 
+        self.logger.debug(f"open h5 file {h5}")
         with h5py.File(h5, mode) as h5fd:
-            self.logger.debug(f"open h5 file {h5}")
-            for rslt in resolutions:
-                dataset_name = self._dataset_name(rslt=rslt, overlap=self.overlap)
-                for chr in self.BigWigChm:
-                    self.logger.info(f"Building chromosome {chr.name} in resolution {rslt}. ")
-                    if self.rebuild_h5 or chr.name not in h5fd.keys() or dataset_name not in h5fd[chr.name].keys() :
-                        dataset_fullname = self._dataset_fullname(chr=chr.name, rslt=rslt, overlap=self.overlap)
-                        self.logger.info(f"create dataset {dataset_fullname} in the h5 file")
-                        data_df = self._bigwig2df(bigwig, chr, rslt, summary)
-                        h5fd.create_dataset(name = dataset_fullname, data = data_df)
-                        h5fd[dataset_fullname].attrs[self.H5Attrs.COLUMNS.value] = data_df.columns.to_list()
+            self.logger.debug(f"Open BigWig file: {bigwig}")
+            with bbi.open(str(bigwig)) as bigwig_fd :
+                for rslt in resolutions:
+                    dataset_name = self._dataset_name(rslt=rslt, overlap=self.overlap)
+                    for chr in self.BigWigChm:
+                        self.logger.debug(f"Building chromosome {chr.name} in resolution {rslt}. ")
+                        if self.rebuild_h5 or chr.name not in h5fd.keys() or dataset_name not in h5fd[chr.name].keys() :
+                            dataset_fullname = self._dataset_fullname(chr=chr.name, rslt=rslt, overlap=self.overlap)
+                            self.logger.debug(f"create dataset {dataset_fullname} in the h5 file")
+                            data_df = self._bigwig2df(bigwig_fd, chr, rslt, summary)
+                            h5fd.create_dataset(name = dataset_fullname, data = data_df)
+                            h5fd[dataset_fullname].attrs[self.H5Attrs.COLUMNS.value] = data_df.columns.to_list()
 
     def _concat_summary_table(self, 
                               tgt_h5fd: h5py.File, 

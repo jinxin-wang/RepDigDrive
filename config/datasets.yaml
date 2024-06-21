@@ -1,2 +1,39 @@
-source_dir: ''
-preprocessed_data_dir: ''
+root:
+  download: "/home/raf/Workspace/RepDigDriver/Test/Datasets"
+  h5: "/home/raf/Workspace/RepDigDriver/Test/h5"
+
+Epigenomics:
+  download: "Raw_Epigenomics"
+  h5: "H5_Epigenomics"
+
+Mappability:
+  download: "Raw_Mappability"
+  h5: "H5_Mappability"
+
+ReplicationTiming:
+  download: "Raw_ReplicationTiming"
+  h5: "H5_ReplicationTiming"
+
+ReferenceGenome:
+  download: "Raw_ReferenceGenome"
+  h5: "H5_ReferenceGenome"
+
+PCAWG:
+  download: "Raw_PCAWG"
+  h5: "H5_PCAWG"
+
+Cbioportal:
+  download: "Raw_Cbioportal"
+  h5: "H5_Cbioportal"
+
+Dietlein:
+  download: "Raw_Dietlein"
+  h5: "H5_Dietlein"
+
+Hartwig:
+  download: "Raw_Hartwig"
+  h5: "H5_Hartwig"
+
+Sanger:
+  download: "Raw_Sanger"
+  h5: "H5_Sanger"

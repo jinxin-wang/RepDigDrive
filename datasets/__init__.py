@@ -1,6 +1,8 @@
 from ._BioDataset import BioDataset, BioBigWigDataset, BioMafDataset, BioBigWigDatasetFolder
+
 from ._Mappability import MappabilityDataset
 from ._ReplicationTiming import ReplicationTimingDataset
+from ._Epigenomics import RoadmapEpigenomicsDataset
 
 __all__ = (
     "BioDataset",
@@ -8,7 +10,8 @@ __all__ = (
     "BioMafDataset", 
     "BioBigWigDatasetFolder",
     "MappabilityDataset",
-    "ReplicationTimingDataset"
+    "ReplicationTimingDataset",
+    "RoadmapEpigenomicsDataset"
 )
 
 # def __getattr__(name):

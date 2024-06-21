@@ -2,12 +2,13 @@ import os
 import logging
 import h5py
 
+from enum import Enum
 from pathlib import Path
 from logging import Logger
-from datasets import BioBigWigDataset
-
-from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
+## local modules
+from datasets import BioBigWigDataset
 
 class MappabilityDataset(BioBigWigDataset):
 

@@ -24,7 +24,7 @@ from pathlib import Path
 #     args = parse_args()
 #     main(args)
 
-from config import LogSingletonFactory
+from config import LogSingletonFactory, DatasetConfig
 
 logFactory = LogSingletonFactory()
 
@@ -53,10 +53,18 @@ h5Dataset_path  = root_path.joinpath("RepDigDriver/Test/Datasets/BioDataset/h5")
 #                   logger=logger,
 #                   force_download=True)
 
-ReplicationTimingDataset(raw_path=bioDataset_path, 
-                    h5_path =h5Dataset_path,
-                    resolutions=[100000],
-                    design_signals=[0],
-                    design_cells=['Bj'],
-                    logger=logger,
+# ReplicationTimingDataset(raw_path=bioDataset_path, 
+#                     h5_path =h5Dataset_path,
+#                     resolutions=[100000],
+#                     design_signals=[0],
+#                     design_cells=['Bj'],
+#                     logger=logger,
+#                     force_download=True)
+
+RoadmapEpigenomicsDataset(raw_path=bioDataset_path, 
+                    h5_path = h5Dataset_path, 
+                    resolutions = [100000], 
+                    design_epig_modi = 'H3K27ac', 
+                    design_cell_line = [5,6], 
+                    logger = logger,
                     force_download=True)

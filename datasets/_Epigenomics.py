@@ -2,14 +2,15 @@ import os
 import logging
 
 import h5py
-
-from pathlib import Path
-from logging import Logger
-from _BioDataset import BioBigWigDataset
+import numpy as np
 
 from enum import Enum
+from pathlib import Path
+from logging import Logger
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+## local modules
+from datasets import BioBigWigDataset
 from mini_utils import enum_elt_list, enum_value_list
 
 class RoadmapEpigenomicsDataset(BioBigWigDataset):
@@ -170,7 +171,7 @@ class RoadmapEpigenomicsDataset(BioBigWigDataset):
         force_download = False,
         rebuild_h5 = False,
         design_epig_modi: List[str] | str = 'all',
-        design_cell_line: List[int] | str = 'all',
+        design_cell_line: List[int] | int | str = 'all',
         preprocess: Optional[Callable] = None, 
         transform:  Optional[Callable] = None,
         lazy_load: bool = True
@@ -182,6 +183,7 @@ class RoadmapEpigenomicsDataset(BioBigWigDataset):
             # ['DNase', 'H3K27ac', 'H3K27me3', 'H3K36me3', 'H3K4me1', 'H3K4me3', 'H3K9ac', 'H3K9me3']
             self.design_epig_modi = list(self.EpigMod.values())
         else:
+            design_epig_modi = np.array([design_epig_modi]).ravel()
             self.design_epig_modi = [ self.EpigMod[m] for m in design_epig_modi ]
 
         self.design_cell_line = design_cell_line
@@ -193,7 +195,9 @@ class RoadmapEpigenomicsDataset(BioBigWigDataset):
                 self.source_list.extend(src)
             else:
                 cell_line_list = enum_value_list(epig_modi)
+                self.design_cell_line = np.array([self.design_cell_line]).ravel()
                 for cell_line_num in self.design_cell_line:
+                    cell_line_num = int(cell_line_num)
                     if cell_line_num in cell_line_list:
                         self.source_list.append(self._bigwig_src(epig_cell_line = epig_modi(cell_line_num)))
 
@@ -210,15 +214,16 @@ class RoadmapEpigenomicsDataset(BioBigWigDataset):
                          lazy_load  = lazy_load)
 
     def build_h5_summary(self):
+
         mode = 'a'
         if self.rebuild_h5:
             mode = 'w'
 
         for epig_modi in self.design_epig_modi: 
             h5fd_dict = {}
-            epig_modi_name = epig_modi.__class__.__name__
+            epig_modi_name = epig_modi.__name__
 
-            if self.design_cell_line == 'all':
+            if type(self.design_cell_line) is str and self.design_cell_line == 'all':
                 epig_modi = enum_elt_list(epig_modi)
             else: 
                 epig_modi = [ epig_modi(c)  for c in self.design_cell_line if c in enum_value_list(epig_modi) ]
@@ -230,14 +235,14 @@ class RoadmapEpigenomicsDataset(BioBigWigDataset):
                 ds_key = f"{epig_modi_name}_{epig_cell_line.name}"
                 h5fd_dict[ds_key] = h5py.File(h5_fname, 'r') 
 
-            self.logger.info(f"start building summary: {self.summary_h5_fname}")
-            with h5py.File(self.summary_h5_fname, mode=mode) as h5fd:
-                for rslt in self.resolutions:
-                    dataset_name = self._dataset_name(rslt, self.overlap) 
-                    for chr in self.BigWigChm:
-                        ############# TODO: Rewrite the logic 
-                        if self.rebuild_h5 or chr.name not in h5fd.keys() or dataset_name not in h5fd[chr.name].keys() :
-                            self._concat_summary_table(h5fd, h5fd_dict, chr, rslt, self.overlap) 
+        self.logger.info(f"start building summary: {self.summary_h5_fname}")
+        with h5py.File(self.summary_h5_fname, mode=mode) as h5fd:
+            for rslt in self.resolutions:
+                dataset_name = self._dataset_name(rslt, self.overlap) 
+                for chr in self.BigWigChm:
+                    ############# TODO: Rewrite the logic 
+                    if self.rebuild_h5 or chr.name not in h5fd.keys() or dataset_name not in h5fd[chr.name].keys() :
+                        self._concat_summary_table(h5fd, h5fd_dict, chr, rslt, self.overlap) 
 
             for k in h5fd_dict:
                 h5fd_dict[k].close()
