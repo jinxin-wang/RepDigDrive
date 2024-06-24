@@ -14,11 +14,12 @@ import pandas as pd
 from enum import Enum
 from pathlib import Path
 from abc import abstractmethod
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from torch.utils.data import Dataset
 
-from mini_utils import enum_value_list, enum_name_list
+from mini_utils import enum_value_list, enum_name_list, Chm, build_N_gram_nucl, BigWigChromSizesDict
 
 class BioDataset(Dataset):
 
@@ -28,8 +29,9 @@ class BioDataset(Dataset):
     def __init__(
         self, 
         raw_path: Union[str, Path], 
-        logger: Union[str, Logger] = logging.getLogger(),
-        force_download: bool = False,
+        logger: Union[str, Logger] = logging.getLogger(), 
+        force_download: bool = False, 
+        concurrent: int = 0, 
     ) -> None:
         
 
@@ -41,40 +43,67 @@ class BioDataset(Dataset):
         self.raw_path = Path(raw_path)
         
         self.force_download = force_download
+        self.concurrent = concurrent
 
         if force_download or not os.path.isdir(self.raw_path):
             self.download_rawdata()
 
         self.logger.debug("init BioDataset end.")
 
+    def _download(self, src):
+        fname = src.split('/')[-1]
+        tgt_f = self.raw_path.joinpath(fname)
+
+        try:
+            if not os.path.isfile(tgt_f):
+                self.logger.info(f"Starting download {fname}")
+                self.logger.info(f"{src}")
+                # out = subprocess.run(['wget', '-c', '--no-check-certificate', src, '-P', self.raw_path], check=True, shell=False)
+                out = subprocess.run(
+                    ['wget', '-c', '--no-check-certificate', src, '-P', self.raw_path], 
+                    check=True, 
+                    shell=False, 
+                    stdout=subprocess.PIPE, 
+                    stderr=subprocess.PIPE)
+                
+                self.logger.info(out.stdout)
+
+            else:
+                self.logger.info(f"Downloaded data file: {fname}")
+
+            return fname, True, None
+        
+        except Exception as e:
+            self.logger.error(f"Download Failed: {src}")
+            self.logger.info(out.stdout)
+            self.logger.error(out.stderr)
+            self.logger.error(e)
+
+            return fname, False, src(e)
+    
     def download_rawdata(self):
         """
         download rawdata listed in self.source_list to the directory self.raw_path
         """
         pathlib.Path.mkdir(self.raw_path, exist_ok=True, parents=True)
         self.logger.info(f"Initialize download directory: {self.raw_path}")
-        self.failed_list = []
+        self.download_results = []
 
-        for src in self.source_list :
-            fname = src.split('/')[-1]
-            tgt_f = self.raw_path.joinpath(fname)
-            try:
-                if not os.path.isfile(tgt_f):
-                    self.logger.info(f"Starting download {fname}")
-                    self.logger.info(f"{src}")
-                    out = subprocess.run(['wget', '-c', '--no-check-certificate', src, '-P', self.raw_path], check=True, shell=False)
-                else:
-                    self.logger.info(f"Downloaded data file: {fname}")
+        if self.concurrent <= 1 :
+            self.download_results = [[url, *self._download(src)] for src in self.source_list]
 
-            except Exception as e:
-                self.logger.info(out.stdout)
-                self.logger.error(out.stderr)
-                self.logger.error(e)
-                self.failed_list.append(src)
-
-        if len(self.failed_list) > 0 :
-            self.logger.error(f"Failed : \n{self.failed_list}")
+        else :
+            with ThreadPoolExecutor(max_workers = self.concurrent) as executor:
+                future_to_url = {executor.submit(url): url for url in self.source_list}
+                for future in as_completed(future_to_url): 
+                    url = future_to_url[future]
+                    try:
+                        filename, success, error = future.result()
+                        self.download_results.append([url, filename, success, error])
+                    except Exception as e:
+                        self.download_results.append([url, None, False, str(e)])
         
+        self.logger.debug(f"Download Summary: \n{self.download_results}")
 
 class BioBigWigDataset(BioDataset):
 
@@ -119,61 +148,6 @@ class BioBigWigDataset(BioDataset):
     for more details about BigWig format, please refer to : https://genome.ucsc.edu/goldenPath/help/bigWig.html
     """
 
-    class BigWigChm(Enum):
-        chr1 = 1
-        chr2 = 2
-        chr3 = 3
-        chr4 = 4
-        chr5 = 5
-        chr6 = 6
-        chr7 = 7
-        chr8 = 8
-        chr9 = 9
-        chr10 = 10
-        chr11 = 11
-        chr12 = 12
-        chr13 = 13
-        chr14 = 14
-        chr15 = 15
-        chr16 = 16
-        chr17 = 17
-        chr18 = 18
-        chr19 = 19
-        chr20 = 20
-        chr21 = 21
-        chr22 = 22
-        chrX  = 23
-        # chrY  = 24
-        # chrM  = 25
-
-    BigWigChromSizes = {
-        BigWigChm(1): 249250621,
-        BigWigChm(2): 243199373,
-        BigWigChm(3): 198022430,
-        BigWigChm(4): 191154276,
-        BigWigChm(5): 180915260,
-        BigWigChm(6): 171115067,
-        BigWigChm(7): 159138663,
-        BigWigChm(8): 146364022,
-        BigWigChm(9): 141213431,
-        BigWigChm(10): 135534747,
-        BigWigChm(11): 135006516,
-        BigWigChm(12): 133851895,
-        BigWigChm(13): 115169878,
-        BigWigChm(14): 107349540,
-        BigWigChm(15): 102531392,
-        BigWigChm(16): 90354753,
-        BigWigChm(17): 81195210,
-        BigWigChm(18): 78077248,
-        BigWigChm(19): 59128983,
-        BigWigChm(20): 63025520,
-        BigWigChm(21): 48129895,
-        BigWigChm(22): 51304566,
-        BigWigChm(23): 155270560,
-        # BigWigChm(Y): 59373566
-        # BigWigChm(M): 16571,
-    }
-
     class H5Attrs(Enum):
         COLUMNS   = 'columns'
         INDEX     = 'index'
@@ -200,6 +174,7 @@ class BioBigWigDataset(BioDataset):
         summary : Union[str, List[str]] = 'mean',
         logger: Union[str, Logger] = logging.getLogger(),
         force_download:bool = False,
+        concurrent: int = 0, 
         rebuild_h5:bool = False,
         preprocess: Optional[Callable] = None, 
         transform:  Optional[Callable] = None, 
@@ -209,7 +184,7 @@ class BioBigWigDataset(BioDataset):
         if not hasattr(self, 'dataset_name') or self.dataset_name is None:
             self.dataset_name = "BioBigWig"
     
-        super().__init__(raw_path = raw_path, logger = logger, force_download = force_download)
+        super().__init__(raw_path = raw_path, logger = logger, force_download = force_download, concurrent = concurrent)
 
         self.logger.debug("init BioBigWigDataset start")
         self.resolutions = resolutions
@@ -225,9 +200,10 @@ class BioBigWigDataset(BioDataset):
 
         self.preprocess = preprocess
         self.transform  = transform
+        self.lazy_load  = lazy_load
 
         list.sort(self.resolutions)
-        chromsizes = np.array([self.BigWigChromSizes[chr] for chr in self.BigWigChromSizes.keys()])
+        chromsizes = np.array([BigWigChromSizesDict[chr] for chr in BigWigChromSizesDict.keys()])
 
         self.sample_nums = np.ceil(chromsizes/(self.resolutions[0] - self.overlap)/self.h5_chunk_size)
         self.sample_cum_nums = np.cumsum(self.sample_nums)
@@ -282,13 +258,13 @@ class BioBigWigDataset(BioDataset):
 
     def _bigwig2df(self, 
                    bigwig_fd, 
-                   chr: BigWigChm, 
+                   chr: Chm, 
                    resolution: int, 
                    summary: List[BigWigSummary]
         ) -> pd.DataFrame:
 
         # chr_size = epig_fd.chromsizes[chr]
-        chr_size = self.BigWigChromSizes[chr]
+        chr_size = BigWigChromSizesDict[chr]
         self.logger.info(f"{chr.name}, length {chr_size}")
         starts = np.arange(0, chr_size, resolution - self.overlap)
         ends   = starts + resolution
@@ -327,7 +303,7 @@ class BioBigWigDataset(BioDataset):
             with bbi.open(str(bigwig)) as bigwig_fd :
                 for rslt in resolutions:
                     dataset_name = self._dataset_name(rslt=rslt, overlap=self.overlap)
-                    for chr in self.BigWigChm:
+                    for chr in self.Chm:
                         self.logger.debug(f"Building chromosome {chr.name} in resolution {rslt}. ")
                         if self.rebuild_h5 or chr.name not in h5fd.keys() or dataset_name not in h5fd[chr.name].keys() :
                             dataset_fullname = self._dataset_fullname(chr=chr.name, rslt=rslt, overlap=self.overlap)
@@ -339,7 +315,7 @@ class BioBigWigDataset(BioDataset):
     def _concat_summary_table(self, 
                               tgt_h5fd: h5py.File, 
                               src_h5fd_dict: Dict[str, h5py.File], 
-                              chr: BigWigChm, 
+                              chr: Chm, 
                               rslt: int, 
                               overlap: int
         ) -> h5py.File :
@@ -393,7 +369,7 @@ class BioBigWigDataset(BioDataset):
         """
         # find the index for the minimum resolution
         chm_idx = sum(self.sample_cum_nums < index)
-        chm = self.BigWigChm(chm_idx+1)
+        chm = self.Chm(chm_idx+1)
         idx = index - self.sample_cum_nums[chm]
         start_position = idx * min(self.resolutions) * self.h5_chunk_size
         end_position   = (idx+1) * min(self.resolutions) * self.h5_chunk_size
@@ -405,7 +381,7 @@ class BioBigWigDataset(BioDataset):
             coll  = len(ds.attrs[self.H5Attrs.COLUMNS.value])
             start_position, end_position = self._best_cover(start_position, 
                                                             end_position,
-                                                            self.BigWigChromSizes[chm.name],
+                                                            BigWigChromSizesDict[chm.name],
                                                             rslt)
             
             values_df = pd.DataFrame(ds[(slice(int(start_position/rslt), int(end_position/rslt), 1),slice(0,coll,1))], 
@@ -427,42 +403,87 @@ class BioBigWigDataset(BioDataset):
         return np.sum(self.sample_nums)
 
 class BioMafDataset(BioDataset):
-    def __init__(self, 
-                 raw_path: str | Path, 
-                 logger=logging.getLogger(os.getcwd()), 
-                 force_download=False
-        ) -> None:
 
-        self.dataset_name = "BioMaf"
-    
-        super().__init__(raw_path = raw_path, logger = logger, force_download = force_download)
+    class ANNOT(Enum):
+        INDEL = 'INDEL'
+        Missense = 'Missense'
+        Nonsense = 'Nonsense'
+        Noncoding= 'Noncoding'
+        Stop_loss= 'Stop_loss'
+        Synonymous = 'Synonymous'
+        Essential_Splice = 'Essential_Splice'
 
-        # TODO: build h5 for maf files
-
-class BioBigWigDatasetFolder(Dataset):
     def __init__(
         self, 
-        root_path: Union[str, Path],
-        resolution: Union[int, List[int]],
-        preprocess: Callable, 
-        dataset_cls: BioDataset,
-        transform:  Optional[Callable] = None
-    ) -> None:
-        
-        self.root_path = Path(root_path)
+        h5_path: Union[str, Path], 
+        raw_path: Union[str, Path], 
+        resolutions: list[int],
+        overlap : int = 0,
+        h5_chunk_size: int = 100,
+        N_grams: List[int]|int = 3,
+        logger: Union[str, Logger] = logging.getLogger(),
+        force_download:bool = False,
+        concurrent: int = 0, 
+        rebuild_h5:bool = False,
+        preprocess: Optional[Callable] = None, 
+        transform:  Optional[Callable] = None, 
+        lazy_load: bool = True
+        ) -> None:
 
-        if type(resolution) == int:
-            self.resolution = [resolution]
+        if not hasattr(self, 'dataset_name') or self.dataset_name is None:
+            self.dataset_name = "BioMAF"
+    
+        super().__init__(raw_path = raw_path, logger = logger, force_download = force_download, concurrent = concurrent)
+
+        self.logger.debug("init BioBigWigDataset start")
+        self.resolutions = resolutions
+        self.overlap = overlap
+        self.h5_chunk_size= h5_chunk_size
+        self.N_grams = dict([(n,build_N_gram_nucl(n)) for n in np.array([N_grams]).reshape(-1).tolist()])
+
+        self.h5_path = Path(h5_path) 
+        self.h5_list = [] 
+        self.rebuild_h5 = rebuild_h5 
+
+        self.preprocess = preprocess
+        self.transform  = transform
+        self.lazy_load  = lazy_load
+
+        list.sort(self.resolutions)
+        chromsizes = np.array([BigWigChromSizesDict[chr] for chr in BigWigChromSizesDict.keys()])
+        self.sample_nums = np.ceil(chromsizes/(self.resolutions[0] - self.overlap)/self.h5_chunk_size)
+        self.sample_cum_nums = np.cumsum(self.sample_nums)
+
+        for maf_src in self.source_list:
+            maf_fname = Path(maf_src).name
+            maf_fname = self.raw_path.joinpath(maf_fname)
+            h5_fname     = self._h5_fname(maf_fname.name)
+            self.h5_list.append(h5_fname)
+            self.build_h5(maf = maf_fname, 
+                          h5 = h5_fname, 
+                          resolutions = self.resolutions, 
+                          summary=self.summary) 
+            
+        self.summary_h5_fname = self.h5_path.joinpath(f"{self.dataset_name}.h5")
+        self.build_h5_summary()
+
+        if self.preprocess is not None:
+            self.preprocess(self.summary_h5_fname)
+
+        if os.path.isfile(self.summary_h5_fname):
+            self.summary_h5_fd = h5py.File(self.summary_h5_fname, 'r')
         else:
-            self.resolution = resolution
+            self.summary_h5_fd = None
 
-        self.datasets = [
-            dataset_cls(
-                raw_path = self.root_path.join(fn),
-                resolution= r, 
-                preprocess= preprocess, 
-                transform = transform
-            ) for fn in os.listdir(self) 
-                for r in self.resolution 
-                    if os.path.isfile(self.root_path.joinpath(fn))
-        ]
+        self.logger.debug("init BioBigWigDataset end.")
+
+
+    def build_h5(self):
+        pass
+
+    def build_h5_summary(self):
+        pass
+
+
+
+# class BioBigWigDatasetFolder(Dataset):

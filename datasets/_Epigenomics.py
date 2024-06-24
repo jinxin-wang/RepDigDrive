@@ -239,7 +239,7 @@ class RoadmapEpigenomicsDataset(BioBigWigDataset):
         with h5py.File(self.summary_h5_fname, mode=mode) as h5fd:
             for rslt in self.resolutions:
                 dataset_name = self._dataset_name(rslt, self.overlap) 
-                for chr in self.BigWigChm:
+                for chr in self.Chm:
                     ############# TODO: Rewrite the logic 
                     if self.rebuild_h5 or chr.name not in h5fd.keys() or dataset_name not in h5fd[chr.name].keys() :
                         self._concat_summary_table(h5fd, h5fd_dict, chr, rslt, self.overlap) 
