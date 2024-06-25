@@ -2,7 +2,7 @@ import itertools
 import numpy as np
 
 from enum import Enum
-from mini_utils import quat2dec
+from ._maths import quat2dec
 
 class Chm(Enum):
     chr1 = 1
