@@ -10,7 +10,7 @@ def is_even(num: Union[List[int], Tuple[int], np.array[int], torch.Tensor[int]])
 def is_odd(num: Union[List[int], Tuple[int], np.array[int], torch.Tensor[int]]) -> torch.Tensor:
     return is_even(num) == False
 
-def quat2dec(n: str) -> str:
+def quat2dec(n: str) -> int:
     return int(n, 4)
 
 def dec2quat(n: int) -> str:
