@@ -46,20 +46,20 @@ def build_datasets_test():
     bioDataset_path = root_path.joinpath("RepDigDriver/Test/Datasets/BioDataset")
     h5Dataset_path  = root_path.joinpath("RepDigDriver/Test/Datasets/BioDataset/h5")
 
-    MappabilityDataset(raw_path=bioDataset_path, 
-                    h5_path =h5Dataset_path,
-                    resolutions=[100000],
-                    design_mers=[36],
-                    logger=logger,
-                    force_download=True)
+    # MappabilityDataset(raw_path=bioDataset_path, 
+    #                 h5_path =h5Dataset_path,
+    #                 resolutions=[100000],
+    #                 design_mers=[36],
+    #                 logger=logger,
+    #                 force_download=True)
 
-    ReplicationTimingDataset(raw_path=bioDataset_path, 
-                        h5_path =h5Dataset_path,
-                        resolutions=[100000],
-                        design_signals=[0],
-                        design_cells=['Bj'],
-                        logger=logger,
-                        force_download=True)
+    # ReplicationTimingDataset(raw_path=bioDataset_path, 
+    #                     h5_path =h5Dataset_path,
+    #                     resolutions=[100000],
+    #                     design_signals=[0],
+    #                     design_cells=['Bj'],
+    #                     logger=logger,
+    #                     force_download=True)
 
     RoadmapEpigenomicsDataset(raw_path=bioDataset_path, 
                         h5_path = h5Dataset_path, 
@@ -68,5 +68,4 @@ def build_datasets_test():
                         design_cell_line = [5,6], 
                         logger = logger,
                         force_download=True)
-    
     

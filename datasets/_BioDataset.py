@@ -79,7 +79,7 @@ class BioDataset(Dataset):
             self.logger.error(out.stderr)
             self.logger.error(e)
 
-            return fname, False, src(e)
+            return fname, False, str(e)
     
     def download_rawdata(self):
         """
@@ -90,7 +90,9 @@ class BioDataset(Dataset):
         self.download_results = []
 
         if self.concurrent <= 1 :
-            self.download_results = [[url, *self._download(src)] for src in self.source_list]
+            for url in self.source_list:
+                fname, success, err_msg = self._download(url)
+                self.download_results.append([url, fname, success, err_msg])
 
         else :
             with ThreadPoolExecutor(max_workers = self.concurrent) as executor:
@@ -201,6 +203,8 @@ class BioBigWigDataset(BioDataset):
         self.preprocess = preprocess
         self.transform  = transform
         self.lazy_load  = lazy_load
+
+        self.Chm = Chm
 
         list.sort(self.resolutions)
         chromsizes = np.array([BigWigChromSizesDict[chr] for chr in BigWigChromSizesDict.keys()])

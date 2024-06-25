@@ -1,13 +1,13 @@
-import torch 
+from torch import Tensor
 import numpy as np
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-def is_even(num: Union[List[int], Tuple[int], np.array[int], torch.Tensor[int]]) -> torch.Tensor:
+def is_even(num) -> bool:
     if type(num) is Dict:
         num = [ num[k] for k in num ]
-    return (torch.Tensor(num) & 1) == 0
+    return (Tensor(num) & 1) == 0
 
-def is_odd(num: Union[List[int], Tuple[int], np.array[int], torch.Tensor[int]]) -> torch.Tensor:
+def is_odd(num) -> bool:
     return is_even(num) == False
 
 def quat2dec(n: str) -> int:

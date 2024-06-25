@@ -14,7 +14,7 @@ from datasets import BioBigWigDataset
 from mini_utils import enum_elt_list, enum_value_list
 
 def _build_celline_enum(epig_modi_name: str, epig_modi_cl: List[str]):
-    Enum(epig_modi_name, { c:int(c[1:]) for c in epig_modi_cl})
+    return Enum(epig_modi_name, { c:int(c[1:]) for c in epig_modi_cl})
 
 class RoadmapEpigenomicsDataset(BioBigWigDataset):
     """
@@ -176,12 +176,15 @@ class RoadmapEpigenomicsDataset(BioBigWigDataset):
                 src = enum_elt_list(epig_modi, lambda x: self._bigwig_src(epig_cell_line = x))
                 self.source_list.extend(src)
             else:
+                print(epig_modi)
                 cell_line_list = enum_value_list(epig_modi)
                 self.design_cell_line = np.array([self.design_cell_line]).ravel()
                 for cell_line_num in self.design_cell_line:
                     cell_line_num = int(cell_line_num)
                     if cell_line_num in cell_line_list:
                         self.source_list.append(self._bigwig_src(epig_cell_line = epig_modi(cell_line_num)))
+
+        logger.debug(self.source_list)
 
         super().__init__(h5_path = h5_path, 
                          raw_path=raw_path, 

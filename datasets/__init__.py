@@ -1,4 +1,4 @@
-from ._BioDataset import BioDataset, BioBigWigDataset, BioMafDataset, BioBigWigDatasetFolder
+from ._BioDataset import BioDataset, BioBigWigDataset, BioMafDataset
 
 from ._Mappability import MappabilityDataset
 from ._ReplicationTiming import ReplicationTimingDataset
@@ -8,7 +8,6 @@ __all__ = (
     "BioDataset",
     "BioBigWigDataset", 
     "BioMafDataset", 
-    "BioBigWigDatasetFolder",
     "MappabilityDataset",
     "ReplicationTimingDataset",
     "RoadmapEpigenomicsDataset"

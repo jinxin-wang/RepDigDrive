@@ -7,5 +7,5 @@ __all__ = (
     "Singleton", 
     "enum_name_list", "enum_value_list", "enum_elt_list",
     "is_even", "is_odd", "quat2dec", "dec2quat",
-    "Chm", "Nucl", "build_N_gram_nucl", "BigWigChromSizesDict"
+    "Chm", "Nucl", "build_N_gram_nucl", "BigWigChromSizesDict",
 )
