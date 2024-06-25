@@ -31,7 +31,7 @@ class BioDataset(Dataset):
         raw_path: Union[str, Path], 
         logger: Union[str, Logger] = logging.getLogger(), 
         force_download: bool = False, 
-        concurrent: int = 0, 
+        concurrent_download: int = 0, 
     ) -> None:
         
 
@@ -43,7 +43,7 @@ class BioDataset(Dataset):
         self.raw_path = Path(raw_path)
         
         self.force_download = force_download
-        self.concurrent = concurrent
+        self.concurrent_download = concurrent_download
 
         if force_download or not os.path.isdir(self.raw_path):
             self.download_rawdata()
@@ -105,7 +105,9 @@ class BioDataset(Dataset):
                     except Exception as e:
                         self.download_results.append([url, None, False, str(e)])
         
-        self.logger.debug(f"Download Summary: \n{self.download_results}")
+        self.logger.debug("Download Summary:")
+        for res in self.download_results:
+            self.logger.debug(f"{res}")
 
 class BioBigWigDataset(BioDataset):
 
@@ -408,6 +410,31 @@ class BioBigWigDataset(BioDataset):
 
 class BioMafDataset(BioDataset):
 
+    """
+    BioMafDataset download MAF file, then convert to H5. 
+
+    In a H5 file for maf, it contains N-grams context tables, So that 
+    each mutation can be represented as a combination of several one-hot vectors, for example :
+
+    mut = [position-chromosome, 
+           position-start, 
+           position-end,
+           mutation-annotation,
+           indel_length,
+           single-base-substituion-type, 
+           single-base-substituion-class, 
+           reference-nucleotide,
+           reference-amino-acid,
+           reference-3-base-context, 
+           reference-5-base-context, 
+           ..., 
+           reference-3-amino-acid-context, # TODO
+           reference-5-amino-acid-context, # TODO
+           ...]
+
+    To save the mut in H5 file dataset, each value should be an index (integer). 
+    """
+
     class ANNOT(Enum):
         INDEL = 'INDEL'
         Missense = 'Missense'
@@ -427,7 +454,7 @@ class BioMafDataset(BioDataset):
         N_grams: List[int]|int = 3,
         logger: Union[str, Logger] = logging.getLogger(),
         force_download:bool = False,
-        concurrent: int = 0, 
+        concurrent_download: int = 0, 
         rebuild_h5:bool = False,
         preprocess: Optional[Callable] = None, 
         transform:  Optional[Callable] = None, 
@@ -437,7 +464,7 @@ class BioMafDataset(BioDataset):
         if not hasattr(self, 'dataset_name') or self.dataset_name is None:
             self.dataset_name = "BioMAF"
     
-        super().__init__(raw_path = raw_path, logger = logger, force_download = force_download, concurrent = concurrent)
+        super().__init__(raw_path = raw_path, logger = logger, force_download = force_download, concurrent_download = concurrent_download)
 
         self.logger.debug("init BioBigWigDataset start")
         self.resolutions = resolutions
@@ -461,12 +488,12 @@ class BioMafDataset(BioDataset):
         for maf_src in self.source_list:
             maf_fname = Path(maf_src).name
             maf_fname = self.raw_path.joinpath(maf_fname)
-            h5_fname     = self._h5_fname(maf_fname.name)
+            h5_fname  = self._h5_fname(maf_fname.name)
             self.h5_list.append(h5_fname)
             self.build_h5(maf = maf_fname, 
                           h5 = h5_fname, 
                           resolutions = self.resolutions, 
-                          summary=self.summary) 
+                          summary = self.summary)
             
         self.summary_h5_fname = self.h5_path.joinpath(f"{self.dataset_name}.h5")
         self.build_h5_summary()
@@ -476,6 +503,7 @@ class BioMafDataset(BioDataset):
 
         if os.path.isfile(self.summary_h5_fname):
             self.summary_h5_fd = h5py.File(self.summary_h5_fname, 'r')
+
         else:
             self.summary_h5_fd = None
 
@@ -487,7 +515,5 @@ class BioMafDataset(BioDataset):
 
     def build_h5_summary(self):
         pass
-
-
 
 # class BioBigWigDatasetFolder(Dataset):
