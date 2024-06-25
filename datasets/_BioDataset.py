@@ -439,7 +439,7 @@ class BioMafDataset(BioDataset):
         self.resolutions = resolutions
         self.overlap = overlap
         self.h5_chunk_size= h5_chunk_size
-        self.N_grams = dict([(n,build_N_gram_nucl(n)) for n in np.array([N_grams]).reshape(-1).tolist()])
+        self.N_grams = dict([(n,build_N_gram_nucl(n)) for n in np.array([N_grams]).reshape(-1)])
 
         self.h5_path = Path(h5_path) 
         self.h5_list = [] 

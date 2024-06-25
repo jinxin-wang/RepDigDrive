@@ -2,6 +2,7 @@ import itertools
 import numpy as np
 
 from enum import Enum
+from mini_utils import quat2dec
 
 class Chm(Enum):
     chr1 = 1
@@ -70,7 +71,7 @@ def build_N_gram_nucl(N):
     ngram_dict = {}
     for ctx in itertools.product(elements, repeat=N):
         key = ''.join([ Nucl(c).name for c in ctx ])
-        value = sum(pwr*np.array(ctx))
+        value = int(f"{sum(pwr*np.array(ctx))}")
         ngram_dict[key] = value
 
     return Enum("context3", ngram_dict, type=int)
