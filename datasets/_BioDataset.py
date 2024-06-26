@@ -23,6 +23,10 @@ from mini_utils import enum_value_list, enum_name_list, Chm, build_N_gram_nucl, 
 
 class BioDataset(Dataset):
 
+    class H5Attrs(Enum):
+        COLUMNS   = 'columns'
+        INDEX     = 'index'
+
     source_list = ["https://hgdownload-test.gi.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeUwRepliSeq/wgEncodeUwRepliSeqBg02esWaveSignalRep1.bigWig",
                    "https://hgdownload-test.gi.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeUwRepliSeq/wgEncodeUwRepliSeqBjWaveSignalRep2.bigWig"]
 
@@ -152,10 +156,6 @@ class BioBigWigDataset(BioDataset):
     for more details about BigWig format, please refer to : https://genome.ucsc.edu/goldenPath/help/bigWig.html
     """
 
-    class H5Attrs(Enum):
-        COLUMNS   = 'columns'
-        INDEX     = 'index'
-
     class BigWigSummary(Enum):
         mean = 'mean'
         max  = 'max'
@@ -284,11 +284,11 @@ class BioBigWigDataset(BioDataset):
 
         return epig_df
 
-    def _dataset_name(self, rslt: int, overlap: int) -> str:
+    def _h5_dataset_name(self, rslt: int, overlap: int) -> str:
         return f"{rslt}_{overlap}"
 
-    def _dataset_fullname(self, chr: str, rslt: int, overlap: int) -> str:
-        dataset_name = self._dataset_name(rslt=rslt, overlap=overlap)
+    def _h5_dataset_fullname(self, chr: str, rslt: int, overlap: int) -> str:
+        dataset_name = self._h5_dataset_name(rslt=rslt, overlap=overlap)
         return f"{chr}/{dataset_name}"
 
     def build_h5(self, 
@@ -308,11 +308,11 @@ class BioBigWigDataset(BioDataset):
             self.logger.debug(f"Open BigWig file: {bigwig}")
             with bbi.open(str(bigwig)) as bigwig_fd :
                 for rslt in resolutions:
-                    dataset_name = self._dataset_name(rslt=rslt, overlap=self.overlap)
+                    dataset_name = self._h5_dataset_name(rslt=rslt, overlap=self.overlap)
                     for chr in self.Chm:
                         self.logger.debug(f"Building chromosome {chr.name} in resolution {rslt}. ")
                         if self.rebuild_h5 or chr.name not in h5fd.keys() or dataset_name not in h5fd[chr.name].keys() :
-                            dataset_fullname = self._dataset_fullname(chr=chr.name, rslt=rslt, overlap=self.overlap)
+                            dataset_fullname = self._h5_dataset_fullname(chr=chr.name, rslt=rslt, overlap=self.overlap)
                             self.logger.debug(f"create dataset {dataset_fullname} in the h5 file")
                             data_df = self._bigwig2df(bigwig_fd, chr, rslt, summary)
                             h5fd.create_dataset(name = dataset_fullname, data = data_df)
@@ -333,8 +333,8 @@ class BioBigWigDataset(BioDataset):
 
         for k in src_h5fd_dict:
             # check if the summary tables have same length
-            self.logger.debug(self._dataset_fullname(chr.name, rslt, overlap))
-            ds = src_h5fd_dict[k][self._dataset_fullname(chr.name, rslt, overlap)]
+            self.logger.debug(self._h5_dataset_fullname(chr.name, rslt, overlap))
+            ds = src_h5fd_dict[k][self._h5_dataset_fullname(chr.name, rslt, overlap)]
             self.logger.debug(f"shape of dataset: {ds}")
             if L < 0 :
                 assert ds.shape[0] > 0
@@ -346,7 +346,7 @@ class BioBigWigDataset(BioDataset):
         self.logger.debug(f"estimate the shape of entire dataset : {(L, columns_count)}")
         self.logger.debug(f"set the chunk size : {(self.h5_chunk_size, columns_count)}")
         # create chunked dataset
-        tgt_h5fd.create_dataset(name = self._dataset_fullname(chr.name, rslt, overlap), 
+        tgt_h5fd.create_dataset(name = self._h5_dataset_fullname(chr.name, rslt, overlap), 
                                 shape = (L, columns_count), 
                                 chunks= (self.h5_chunk_size, columns_count), 
                                 dtype = float)
@@ -355,12 +355,12 @@ class BioBigWigDataset(BioDataset):
         column_names = []
         columns_idx  = 0
         for k, fd in src_h5fd_dict.items():
-            ds = fd[self._dataset_fullname(chr.name, rslt, overlap)]
+            ds = fd[self._h5_dataset_fullname(chr.name, rslt, overlap)]
             attrs = ds.attrs[self.H5Attrs.COLUMNS.value]
             self.logger.debug(f"attributes of dataset: {attrs}")
             column_names += [ f"{k}_{s}" for s in attrs ]
             self.logger.debug(f"column names: {column_names}")
-            tgt_h5fd[self._dataset_fullname(chr.name,rslt,overlap)][:,columns_idx: columns_idx + ds.shape[1]] = ds[:]
+            tgt_h5fd[self._h5_dataset_fullname(chr.name,rslt,overlap)][:,columns_idx: columns_idx + ds.shape[1]] = ds[:]
             columns_idx += ds.shape[1]
 
         tgt_h5fd.attrs[self.H5Attrs.COLUMNS.value] = column_names
@@ -383,7 +383,7 @@ class BioBigWigDataset(BioDataset):
         summary_list = []
 
         for rslt in self.resolutions:
-            ds = self.summary_h5_fd[self._dataset_fullname(chm,rslt,self.overlap)]
+            ds = self.summary_h5_fd[self._h5_dataset_fullname(chm,rslt,self.overlap)]
             coll  = len(ds.attrs[self.H5Attrs.COLUMNS.value])
             start_position, end_position = self._best_cover(start_position, 
                                                             end_position,
@@ -419,6 +419,7 @@ class BioMafDataset(BioDataset):
     mut = [position-chromosome, 
            position-start, 
            position-end,
+           cohort_class, # TODO
            mutation-annotation,
            indel_length,
            single-base-substituion-type, 
@@ -433,9 +434,22 @@ class BioMafDataset(BioDataset):
            ...]
 
     To save the mut in H5 file dataset, each value should be an index (integer). 
+
+    # TODO: cohort_class
+    https://oncotree.mskcc.org/#/home
+    https://civicdb.org/diseases/home
+    or sth. else
+
+    # TODO: amino-acid-context 
+    https://rest.ensembl.org/
+    or some other way
     """
 
-    class ANNOT(Enum):
+    class COHORT_CLASS(Enum):
+        # TODO
+        pass
+
+    class MUT_ANNOT(Enum):
         INDEL = 'INDEL'
         Missense = 'Missense'
         Nonsense = 'Nonsense'
@@ -448,9 +462,6 @@ class BioMafDataset(BioDataset):
         self, 
         h5_path: Union[str, Path], 
         raw_path: Union[str, Path], 
-        resolutions: list[int],
-        overlap : int = 0,
-        h5_chunk_size: int = 100,
         N_grams: List[int]|int = 3,
         logger: Union[str, Logger] = logging.getLogger(),
         force_download:bool = False,
@@ -467,9 +478,6 @@ class BioMafDataset(BioDataset):
         super().__init__(raw_path = raw_path, logger = logger, force_download = force_download, concurrent_download = concurrent_download)
 
         self.logger.debug("init BioBigWigDataset start")
-        self.resolutions = resolutions
-        self.overlap = overlap
-        self.h5_chunk_size= h5_chunk_size
         self.N_grams = dict([(n,build_N_gram_nucl(n)) for n in np.array([N_grams]).reshape(-1)])
 
         self.h5_path = Path(h5_path) 
@@ -491,9 +499,7 @@ class BioMafDataset(BioDataset):
             h5_fname  = self._h5_fname(maf_fname.name)
             self.h5_list.append(h5_fname)
             self.build_h5(maf = maf_fname, 
-                          h5 = h5_fname, 
-                          resolutions = self.resolutions, 
-                          summary = self.summary)
+                          h5 = h5_fname)
             
         self.summary_h5_fname = self.h5_path.joinpath(f"{self.dataset_name}.h5")
         self.build_h5_summary()
@@ -510,10 +516,43 @@ class BioMafDataset(BioDataset):
         self.logger.debug("init BioBigWigDataset end.")
 
 
-    def build_h5(self):
+    def build_h5(self, maf: Path, h5: Path):
         pass
-
+            
     def build_h5_summary(self):
         pass
 
-# class BioBigWigDatasetFolder(Dataset):
+    def _h5_fname(self, maf_fname: str) -> Path:
+        # replace bigwig by ignoring cases
+        h5_fname = maf_fname.split('.')[0] + '.h5'
+        return self.h5_path.joinpath(h5_fname)
+
+class BioDigDriverfDataset(BioMafDataset):
+
+    MAF_COLUMNS = ['CHROM', 'START', 'END', 'REF', 'ALT', 'SAMPLE', 'GENE', 'ANNOT', 'MUT', 'CONTEXT']
+
+    # def __init__(self, h5_path: str | Path, raw_path: str | Path, N_grams: List[int] | int = 3, logger: str | Logger = logging.getLogger(), force_download: bool = False, concurrent_download: int = 0, rebuild_h5: bool = False, preprocess: Callable[..., Any] | None = None, transform: Callable[..., Any] | None = None, lazy_load: bool = True) -> None:
+    #     super().__init__(h5_path, raw_path, N_grams, logger, force_download, concurrent_download, rebuild_h5, preprocess, transform, lazy_load)
+
+    def _h5_dataset_fullname(chr: str, sid: str):
+        return f"{chr}/{sid}"
+
+    def build_h5(self, maf: Path, h5: Path):
+        mode = 'a'
+        if not os.path.isfile(h5) or self.rebuild_h5:
+            pathlib.Path.mkdir(h5.parent, exist_ok=True, parents=True)
+            mode = 'w'
+
+        self.logger.debug(f"open h5 file {h5}")
+
+        colnames = self.MAF_COLUMNS.copy().remove("CHROM").remove('SAMPLE')
+
+        with h5py.File(h5, mode) as h5fd:
+            self.logger.debug(f"Open MAF file: {maf}")
+            maf_df = pd.read_table(maf, names= self.MAF_COLUMNS, sep='\t', skipinitialspace=True, comment='#')
+            for chr, grp in maf_df.groupby("CHROM"):
+                for sid, chr_grp in grp.groupby('SAMPLE'):
+                    dataset_fullname = self._h5_dataset_fullname(chr = chr, sid = sid)
+                    self.logger.debug(f"create dataset {dataset_fullname} in the h5 file")
+                    h5fd.create_dataset(name = dataset_fullname, data = chr_grp[colnames])
+                    h5fd[dataset_fullname].attrs[self.H5Attrs.COLUMNS.value] = colnames    

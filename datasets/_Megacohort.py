@@ -11,20 +11,15 @@ from ._BioDataset import BioDigDriverfDataset
 class Dietlein(BioDigDriverfDataset):
 
     """
-    designed_sets = 'Thymus', 'Thyroid', 'UvealMelanoma', 'Pancan', 'Bladder', 'Pheochromocytoma',
-                'Pleura', 'Prostate', 'LungAD', 'Cholangio', 'TesticularGermCell', 'Gastroesophageal',
-                'HeadNeck', 'Skin', 'Brain', 'Liver', 'Cervix', 'Colorectal', 'KidneyNonClear',
-                'LungSC', 'AdenoidCystic', 'Blood', 'Endometrium', 'KidneyClear', 'Pancreas',
-                'Lymph', 'Ovarian', 'Breast', 'Sarcoma'
+    designed_sets = 'Kidney', 'Esogastric', 'LungNSC', 
+                    'Pancreas', 'Breast', 'Liver', 'Brain',
+                    'HeadNeck', 'Bladder', 'Prostate'
     """
 
-    mirror = "https://cb.csail.mit.edu/cb/DIG/downloads/mutation_files/Dietlein_2019"
+    mirror = "https://cb.csail.mit.edu/cb/DIG/downloads/mutation_files/megacohorts"
 
-    subset_list =['Thymus', 'Thyroid', 'UvealMelanoma', 'Pancan', 'Bladder', 'Pheochromocytoma',
-                'Pleura', 'Prostate', 'LungAD', 'Cholangio', 'TesticularGermCell', 'Gastroesophageal',
-                'HeadNeck', 'Skin', 'Brain', 'Liver', 'Cervix', 'Colorectal', 'KidneyNonClear',
-                'LungSC', 'AdenoidCystic', 'Blood', 'Endometrium', 'KidneyClear', 'Pancreas',
-                'Lymph', 'Ovarian', 'Breast', 'Sarcoma']
+    subset_list =['Kidney', 'Esogastric', 'LungNSC', 'Pancreas', 'Breast', 'Liver', 'Brain',
+                  'HeadNeck', 'Bladder', 'Prostate']
 
     def __init__(self, 
                  h5_path: str | Path, 
@@ -59,7 +54,7 @@ class Dietlein(BioDigDriverfDataset):
                 else:
                     logger.warning(f"{s} is not identified in subset list")
 
-        self.source_list = [ f"{self.mirror}/{fn}_SNV_MNV_INDEL.ICGC.annot.txt.gz" for fn in self.designed_subsets ]
+        self.source_list = [ f"{self.mirror}/{fn}_SNV.DEDUP.no_hypermut.annot.txt.gz" for fn in self.designed_subsets ]
 
         super().__init__(h5_path, raw_path, N_grams, logger, force_download, concurrent_download, rebuild_h5, preprocess, transform, lazy_load)
 

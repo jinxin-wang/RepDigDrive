@@ -198,9 +198,6 @@ class RoadmapEpigenomicsDataset(BioBigWigDataset):
                          transform  = transform,
                          lazy_load  = lazy_load)
 
-    def cline(self):
-        pass
-
     def build_h5_summary(self):
 
         mode = 'a'
