@@ -70,7 +70,8 @@ def build_datasets_test():
     #                     force_download=True)
     
 
-    root_path = Path('/home/raf/Workspace/')
+    # root_path = Path('/home/raf/Workspace/')
+    root_path = Path('D:/TMP/')
     dataset_path = root_path.joinpath("RepDigDriver/Test/Datasets/PCAWG")
     h5Dataset_path  = root_path.joinpath("RepDigDriver/Test/Datasets/PCAWG/h5")
 

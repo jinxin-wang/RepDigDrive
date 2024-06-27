@@ -547,8 +547,8 @@ class BioDigDriverfDataset(BioMafDataset):
                     dataset_fullname = self._h5_dataset_fullname(chr = chr, sid = sid)
                     self.logger.debug(f"create dataset {dataset_fullname} in the h5 file")
                     self.logger.debug(f"{chr_grp[colnames]}")
-                    h5fd.create_dataset(name = dataset_fullname, data = chr_grp[colnames])
-                    h5fd[dataset_fullname].attrs[self.H5Attrs.COLUMNS.value] = colnames
+                    h5fd.create_dataset(name = dataset_fullname, data = chr_grp[colnames].apply(lambda x: self.encode(x)))
+                    h5fd[dataset_fullname].attrs[self.H5Attrs.COLUMNS.value] = self.dataset_colnames
 
     ## x is one row in pandas.DataFrame    
     def _encode_subs(self, x: pd.core.series.Series, substitution_dict: Dict):
@@ -580,4 +580,19 @@ class BioDigDriverfDataset(BioMafDataset):
         elif len(ctx) == n :
             return self.N_grams[n][ctx]
         else:
-            return
+            s = int((len(ctx)-n)/2)
+            return self.N_grams[n][ctx[s:s+n]]
+        
+    def _encode_indel(self, x: pd.core.series.Series): 
+        if x['ANNOT'].strip() == bio.MUT_ANNOT.INDEL.name :
+            if len(x['REF']) > 1:
+                return -len(x['REF'])
+            if len(x['ALT']) > 1:
+                return len(x['ALT'])
+        else:
+            return 0
+
+    def encode(self, x):
+        # MAF_COLUMNS = ['CHROM', 'START', 'END', 'REF', 'ALT', 'SAMPLE', 'GENE', 'ANNOT', 'MUT', 'CONTEXT']
+        self.dataset_colnames = ['START', 'END', 'ANNOT', 'indel_length', 'subs_type', 'subs_class', 'CONTEXT_3']
+        return x['START'], x['END'], self._encode_annot(x), self._encode_indel(x), self._encode_subs_type(x), self._encode_subs_class(x), self._encode_context(x, 3)
