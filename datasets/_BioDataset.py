@@ -19,7 +19,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from torch.utils.data import Dataset
 
-from mini_utils import enum_value_list, enum_name_list, Chm, build_N_gram_nucl, BigWigChromSizesDict
+from mini_utils import Chm, BigWigChromSizesDict
+from mini_utils import bio
 
 class BioDataset(Dataset):
 
@@ -48,9 +49,7 @@ class BioDataset(Dataset):
         
         self.force_download = force_download
         self.concurrent_download = concurrent_download
-
-        if force_download or not os.path.isdir(self.raw_path):
-            self.download_rawdata()
+        self.download_rawdata()
 
         self.logger.debug("init BioDataset end.")
 
@@ -59,7 +58,7 @@ class BioDataset(Dataset):
         tgt_f = self.raw_path.joinpath(fname)
 
         try:
-            if not os.path.isfile(tgt_f):
+            if self.force_download or not os.path.isfile(tgt_f):
                 self.logger.info(f"Starting download {fname}")
                 self.logger.info(f"{src}")
                 # out = subprocess.run(['wget', '-c', '--no-check-certificate', src, '-P', self.raw_path], check=True, shell=False)
@@ -93,13 +92,13 @@ class BioDataset(Dataset):
         self.logger.info(f"Initialize download directory: {self.raw_path}")
         self.download_results = []
 
-        if self.concurrent <= 1 :
+        if self.concurrent_download <= 1 :
             for url in self.source_list:
                 fname, success, err_msg = self._download(url)
                 self.download_results.append([url, fname, success, err_msg])
 
         else :
-            with ThreadPoolExecutor(max_workers = self.concurrent) as executor:
+            with ThreadPoolExecutor(max_workers = self.concurrent_download) as executor:
                 future_to_url = {executor.submit(url): url for url in self.source_list}
                 for future in as_completed(future_to_url): 
                     url = future_to_url[future]
@@ -420,6 +419,7 @@ class BioMafDataset(BioDataset):
            position-start, 
            position-end,
            cohort_class, # TODO
+           gene, # TODO
            mutation-annotation,
            indel_length,
            single-base-substituion-type, 
@@ -445,19 +445,6 @@ class BioMafDataset(BioDataset):
     or some other way
     """
 
-    class COHORT_CLASS(Enum):
-        # TODO
-        pass
-
-    class MUT_ANNOT(Enum):
-        INDEL = 'INDEL'
-        Missense = 'Missense'
-        Nonsense = 'Nonsense'
-        Noncoding= 'Noncoding'
-        Stop_loss= 'Stop_loss'
-        Synonymous = 'Synonymous'
-        Essential_Splice = 'Essential_Splice'
-
     def __init__(
         self, 
         h5_path: Union[str, Path], 
@@ -472,13 +459,14 @@ class BioMafDataset(BioDataset):
         lazy_load: bool = True
         ) -> None:
 
+        self.logger.debug("init BioMafDataset start")
+
         if not hasattr(self, 'dataset_name') or self.dataset_name is None:
             self.dataset_name = "BioMAF"
     
         super().__init__(raw_path = raw_path, logger = logger, force_download = force_download, concurrent_download = concurrent_download)
 
-        self.logger.debug("init BioBigWigDataset start")
-        self.N_grams = dict([(n,build_N_gram_nucl(n)) for n in np.array([N_grams]).reshape(-1)])
+        self.N_grams = dict([(n,build_N_gram_nucl_enum(n)) for n in np.array([N_grams]).reshape(-1)])
 
         self.h5_path = Path(h5_path) 
         self.h5_list = [] 
@@ -513,7 +501,7 @@ class BioMafDataset(BioDataset):
         else:
             self.summary_h5_fd = None
 
-        self.logger.debug("init BioBigWigDataset end.")
+        self.logger.debug("init BioMafDataset end.")
 
 
     def build_h5(self, maf: Path, h5: Path):
@@ -534,8 +522,10 @@ class BioDigDriverfDataset(BioMafDataset):
     # def __init__(self, h5_path: str | Path, raw_path: str | Path, N_grams: List[int] | int = 3, logger: str | Logger = logging.getLogger(), force_download: bool = False, concurrent_download: int = 0, rebuild_h5: bool = False, preprocess: Callable[..., Any] | None = None, transform: Callable[..., Any] | None = None, lazy_load: bool = True) -> None:
     #     super().__init__(h5_path, raw_path, N_grams, logger, force_download, concurrent_download, rebuild_h5, preprocess, transform, lazy_load)
 
-    def _h5_dataset_fullname(chr: str, sid: str):
-        return f"{chr}/{sid}"
+    def _h5_dataset_fullname(self, chr, sid):
+        _sid = str(sid)
+        # _sid = _sid.strip().replace('-', '')
+        return f"{chr}/{_sid}"
 
     def build_h5(self, maf: Path, h5: Path):
         mode = 'a'
@@ -545,7 +535,9 @@ class BioDigDriverfDataset(BioMafDataset):
 
         self.logger.debug(f"open h5 file {h5}")
 
-        colnames = self.MAF_COLUMNS.copy().remove("CHROM").remove('SAMPLE')
+        colnames = self.MAF_COLUMNS.copy()
+        colnames.remove("CHROM")
+        colnames.remove('SAMPLE')
 
         with h5py.File(h5, mode) as h5fd:
             self.logger.debug(f"Open MAF file: {maf}")
@@ -554,5 +546,32 @@ class BioDigDriverfDataset(BioMafDataset):
                 for sid, chr_grp in grp.groupby('SAMPLE'):
                     dataset_fullname = self._h5_dataset_fullname(chr = chr, sid = sid)
                     self.logger.debug(f"create dataset {dataset_fullname} in the h5 file")
+                    # self.logger.debug(f"{chr_grp[colnames]}")
                     h5fd.create_dataset(name = dataset_fullname, data = chr_grp[colnames])
-                    h5fd[dataset_fullname].attrs[self.H5Attrs.COLUMNS.value] = colnames    
+                    h5fd[dataset_fullname].attrs[self.H5Attrs.COLUMNS.value] = colnames
+
+    ## x is one row in pandas.DataFrame    
+    def _encode_subs(self, x: pd.core.series.Series, substitution_dict: Dict):
+        if len(x["MUT"]) == 3 and x["MUT"][1] == '>' and x["MUT"][0] in bio.nucl and x["MUT"][2] in bio.nucl :
+            return substitution_dict[x["MUT"]]
+
+        elif x["ANNOT"].strip() == bio.MUT_ANNOT.INDEL.name :
+            return substitution_dict[bio.MUT_ANNOT.INDEL.name]
+
+        else: 
+            self.logger.error(f"unrecognized value in column 'MUT': {x["MUT"]}")
+
+    def _encode_subs_class(self, x: pd.core.series.Series):
+        return self._encode_subs(x, bio.BASE_SUBSTITUTION_CLASSES)
+
+    def _encode_subs_type(self, x: pd.core.series.Series):
+        return self._encode_subs(x, bio.BASE_SUBSTITUTION_TYPES)
+        
+    def _encode_gene(self, x: pd.core.series.Series):
+        pass
+
+    def _encode_annot(self, x: pd.core.series.Series):
+        return bio.MUT_ANNOT[x['ANNOT'].strip()].value
+    
+    def _encode_context(self, x: pd.core.series.Series):
+        pass

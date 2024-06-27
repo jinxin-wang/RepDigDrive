@@ -50,6 +50,8 @@ class PCAWG(BioDigDriverfDataset):
                  transform: Callable[..., Any] | None = None, 
                  lazy_load: bool = True ) -> None:
         
+        self.logger.debug("init PCAWG start")
+
         self.dataset_name = "PCAWG"
 
         self.resolutions = resolutions
@@ -70,6 +72,8 @@ class PCAWG(BioDigDriverfDataset):
         self.source_list = [ f"{self.mirror}/{fn}_SNV_MNV_INDEL.ICGC.annot.txt.gz" for fn in self.designed_subsets ]
 
         super().__init__(h5_path, raw_path, N_grams, logger, force_download, concurrent_download, rebuild_h5, preprocess, transform, lazy_load)
+
+        self.logger.debug("init PCAWG end")
 
     def build_h5_summary(self):
         pass

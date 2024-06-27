@@ -59,32 +59,46 @@ BigWigChromSizesDict = {
     # Chm(25): 16571,    # M
 }
 
-class Nucl(Enum):
+class NUCLEOTIDE_ENUM(Enum):
     C = 0
     T = 1
     A = 2
     G = 3
 
-class BASE_SUBSTITUTION_TYPES(Enum):
-    C2A = 1
-    C2G = 2
-    C2T = 3
-    T2A = 4
-    T2C = 5
-    T2G = 6
-    INDEL = 7
+nucl = [ n.name for n in NUCLEOTIDE_ENUM ]
 
-BASE_SUBSTITUTION_CLASSES = {
-    BASE_SUBSTITUTION_TYPES(1): 1,
-    BASE_SUBSTITUTION_TYPES(2): 2,
-    BASE_SUBSTITUTION_TYPES(3): 3,
-    BASE_SUBSTITUTION_TYPES(4): 1,
-    BASE_SUBSTITUTION_TYPES(5): 3,
-    BASE_SUBSTITUTION_TYPES(6): 2,
-    BASE_SUBSTITUTION_TYPES(7): 4,
+BASE_SUBSTITUTION_TYPES = {
+    'C>A': 1, 'C>G': 2, 'C>T' : 3,
+    'G>T': 1, 'G>C': 2, 'G>A' : 3,
+    'T>A': 4, 'T>C': 5, 'T>G' : 6,
+    'A>T': 4, 'A>G': 5, 'A>C' : 6,
+    'INDEL': 0
 }
 
-def build_N_gram_nucl_enum(name, N):
+BASE_SUBSTITUTION_CLASSES = {
+    'C>A': 1, 'G>T': 1,
+    'C>G': 2, 'G>C': 2, 
+    'C>T': 3, 'G>A': 3, 
+    'T>A': 1, 'A>T': 1, 
+    'T>C': 3, 'A>G': 3, 
+    'T>G': 2, 'A>C': 2,
+    'INDEL': 0
+}
+
+class COHORT_CLASS(Enum):
+    # TODO
+    pass
+
+class MUT_ANNOT(Enum):
+    INDEL = 0
+    Missense   = 1
+    Nonsense   = 2
+    Noncoding  = 3
+    Stop_loss  = 4
+    Synonymous = 5
+    Essential_Splice = 6
+
+def build_N_gram_nucl_enum(N):
     """
     for example : 3-gram 
     AAA: int("222", base = 4) 
@@ -94,22 +108,18 @@ def build_N_gram_nucl_enum(name, N):
     AAA + TTT = int("333", base = 4) = 63
     CTG + GAC = int("333", base = 4) = 63
     """
+    name = f"context{N}"
+
     pwr = np.power(10, np.ones(N).cumsum()-1)[::-1] 
-    elements = [ e.value for e in Nucl ] 
+    elements = [ e.value for e in NUCLEOTIDE_ENUM ] 
     ngram_dict = {}
     for ctx in itertools.product(elements, repeat=N):
-        key = ''.join([ Nucl(c).name for c in ctx ])
+        key = ''.join([ NUCLEOTIDE_ENUM(c).name for c in ctx ])
         # convert Quaternary to Decimal
-        value = int(f"{sum(pwr*np.array(ctx))}", base=4)
+        value = int(f"{int(sum(pwr*np.array(ctx)))}", base = 4)
         ngram_dict[key] = value
 
     return Enum(name, ngram_dict, type=int)
-
-class Nucl(Enum):
-    C = 0
-    T = 1
-    A = 2
-    G = 3
 
 @DeprecationWarning
 def build_N_ctx_mut_enum(name, N):

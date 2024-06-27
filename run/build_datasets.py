@@ -42,9 +42,9 @@ def build_datasets_test():
     logFactory = LogSingletonFactory()
     logger = logFactory.getLogger('development')
 
-    root_path = Path('/home/raf/Workspace/')
-    bioDataset_path = root_path.joinpath("RepDigDriver/Test/Datasets/BioDataset")
-    h5Dataset_path  = root_path.joinpath("RepDigDriver/Test/Datasets/BioDataset/h5")
+    # root_path = Path('/home/raf/Workspace/')
+    # bioDataset_path = root_path.joinpath("RepDigDriver/Test/Datasets/BioDataset")
+    # h5Dataset_path  = root_path.joinpath("RepDigDriver/Test/Datasets/BioDataset/h5")
 
     # MappabilityDataset(raw_path=bioDataset_path, 
     #                 h5_path =h5Dataset_path,
@@ -61,17 +61,20 @@ def build_datasets_test():
     #                     logger=logger,
     #                     force_download=True)
 
-    RoadmapEpigenomicsDataset(raw_path=bioDataset_path, 
-                        h5_path = h5Dataset_path, 
-                        resolutions = [100000], 
-                        design_epig_modi = 'H3K27ac', 
-                        design_cell_line = [5,6], 
-                        logger = logger,
-                        force_download=True)
+    # RoadmapEpigenomicsDataset(raw_path=bioDataset_path, 
+    #                     h5_path = h5Dataset_path, 
+    #                     resolutions = [100000], 
+    #                     design_epig_modi = 'H3K27ac', 
+    #                     design_cell_line = [5,6], 
+    #                     logger = logger,
+    #                     force_download=True)
     
 
     root_path = Path('/home/raf/Workspace/')
     dataset_path = root_path.joinpath("RepDigDriver/Test/Datasets/PCAWG")
     h5Dataset_path  = root_path.joinpath("RepDigDriver/Test/Datasets/PCAWG/h5")
 
-    PCAWG(h5_path = h5Dataset_path, raw_path = dataset_path)
+    PCAWG(h5_path = h5Dataset_path, 
+          raw_path = dataset_path,
+          logger=logger,
+          designed_subsets='Breast-DCIS')
