@@ -112,7 +112,7 @@ def build_N_gram_nucl_enum(N):
 
     pwr = np.power(10, np.ones(N).cumsum()-1)[::-1] 
     elements = [ e.value for e in NUCLEOTIDE_ENUM ] 
-    ngram_dict = {}
+    ngram_dict = {} 
     for ctx in itertools.product(elements, repeat=N):
         key = ''.join([ NUCLEOTIDE_ENUM(c).name for c in ctx ])
         # convert Quaternary to Decimal

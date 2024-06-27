@@ -11,7 +11,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 ## local modules
 from datasets import BioBigWigDataset
-from mini_utils import enum_elt_list, enum_value_list
+from mini_utils.convert import enum_elt_list, enum_value_list
 
 def _build_celline_enum(epig_modi_name: str, epig_modi_cl: List[str]):
     return Enum(epig_modi_name, { c:int(c[1:]) for c in epig_modi_cl})

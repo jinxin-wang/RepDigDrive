@@ -19,7 +19,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from torch.utils.data import Dataset
 
-from mini_utils import Chm, BigWigChromSizesDict
+from mini_utils.bio import Chm, BigWigChromSizesDict, build_N_gram_nucl_enum
 from mini_utils import bio
 
 class BioDataset(Dataset):
@@ -459,7 +459,7 @@ class BioMafDataset(BioDataset):
         lazy_load: bool = True
         ) -> None:
 
-        self.logger.debug("init BioMafDataset start")
+        logger.debug("init BioMafDataset start")
 
         if not hasattr(self, 'dataset_name') or self.dataset_name is None:
             self.dataset_name = "BioMAF"
@@ -501,7 +501,7 @@ class BioMafDataset(BioDataset):
         else:
             self.summary_h5_fd = None
 
-        self.logger.debug("init BioMafDataset end.")
+        logger.debug("init BioMafDataset end.")
 
 
     def build_h5(self, maf: Path, h5: Path):
@@ -546,7 +546,7 @@ class BioDigDriverfDataset(BioMafDataset):
                 for sid, chr_grp in grp.groupby('SAMPLE'):
                     dataset_fullname = self._h5_dataset_fullname(chr = chr, sid = sid)
                     self.logger.debug(f"create dataset {dataset_fullname} in the h5 file")
-                    # self.logger.debug(f"{chr_grp[colnames]}")
+                    self.logger.debug(f"{chr_grp[colnames]}")
                     h5fd.create_dataset(name = dataset_fullname, data = chr_grp[colnames])
                     h5fd[dataset_fullname].attrs[self.H5Attrs.COLUMNS.value] = colnames
 
@@ -554,12 +554,10 @@ class BioDigDriverfDataset(BioMafDataset):
     def _encode_subs(self, x: pd.core.series.Series, substitution_dict: Dict):
         if len(x["MUT"]) == 3 and x["MUT"][1] == '>' and x["MUT"][0] in bio.nucl and x["MUT"][2] in bio.nucl :
             return substitution_dict[x["MUT"]]
-
         elif x["ANNOT"].strip() == bio.MUT_ANNOT.INDEL.name :
             return substitution_dict[bio.MUT_ANNOT.INDEL.name]
-
         else: 
-            self.logger.error(f"unrecognized value in column 'MUT': {x["MUT"]}")
+            self.logger.error(f"unrecognized value in column 'MUT': {x['MUT']}")
 
     def _encode_subs_class(self, x: pd.core.series.Series):
         return self._encode_subs(x, bio.BASE_SUBSTITUTION_CLASSES)
@@ -573,5 +571,13 @@ class BioDigDriverfDataset(BioMafDataset):
     def _encode_annot(self, x: pd.core.series.Series):
         return bio.MUT_ANNOT[x['ANNOT'].strip()].value
     
-    def _encode_context(self, x: pd.core.series.Series):
-        pass
+    def _encode_context(self, x: pd.core.series.Series, n: int):
+        ctx = x["CONTEXT"]
+        if len(ctx) < n :
+            err_msg = f"length of context {x['CONTEXT']} is less than {n}"
+            self.logger.error(err_msg)
+            raise ValueError(err_msg)
+        elif len(ctx) == n :
+            return self.N_grams[n][ctx]
+        else:
+            return

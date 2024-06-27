@@ -1,7 +1,7 @@
 import yaml
 import logging.config
 
-from mini_utils import Singleton
+from mini_utils.singleton import Singleton
 
 @Singleton
 class LogSingletonFactory(object):

@@ -1,7 +1,7 @@
 import yaml
 from pathlib import Path
 
-from mini_utils import Singleton
+from mini_utils.singleton import Singleton
 
 @Singleton
 class DatasetConfig(object):
