@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from ._BioDataset import BioDigDriverfDataset
 
 
-class PCAWG(BioDigDriverfDataset):
+class PCAWGDataset(BioDigDriverfDataset):
 
     """
     designed_sets = 'Sarcoma_tumors', 'Breast-AdenoCa', 'Breast-DCIS', 'Breast-LobularCa',
@@ -77,3 +77,10 @@ class PCAWG(BioDigDriverfDataset):
 
     def build_h5_summary(self):
         pass
+
+    def __getitem__(self, index) -> Any:
+        return super().__getitem__(index)
+    
+    def __len__(self):
+        pass
+

@@ -303,19 +303,18 @@ class BioBigWigDataset(BioDataset):
             mode = 'w'
 
         self.logger.debug(f"open h5 file {h5}")
-        with h5py.File(h5, mode) as h5fd:
-            self.logger.debug(f"Open BigWig file: {bigwig}")
-            with bbi.open(str(bigwig)) as bigwig_fd :
-                for rslt in resolutions:
-                    dataset_name = self._h5_dataset_name(rslt=rslt, overlap=self.overlap)
-                    for chr in self.Chm:
-                        self.logger.debug(f"Building chromosome {chr.name} in resolution {rslt}. ")
-                        if self.rebuild_h5 or chr.name not in h5fd.keys() or dataset_name not in h5fd[chr.name].keys() :
-                            dataset_fullname = self._h5_dataset_fullname(chr=chr.name, rslt=rslt, overlap=self.overlap)
-                            self.logger.debug(f"create dataset {dataset_fullname} in the h5 file")
-                            data_df = self._bigwig2df(bigwig_fd, chr, rslt, summary)
-                            h5fd.create_dataset(name = dataset_fullname, data = data_df)
-                            h5fd[dataset_fullname].attrs[self.H5Attrs.COLUMNS.value] = data_df.columns.to_list()
+        self.logger.debug(f"Open BigWig file: {bigwig}")
+        with h5py.File(h5, mode) as h5fd, bbi.open(str(bigwig)) as bigwig_fd :
+            for rslt in resolutions:
+                dataset_name = self._h5_dataset_name(rslt=rslt, overlap=self.overlap)
+                for chr in self.Chm:
+                    self.logger.debug(f"Building {chr.name} at resolution {rslt}. ")
+                    if self.rebuild_h5 or chr.name not in h5fd.keys() or dataset_name not in h5fd[chr.name].keys() :
+                        dataset_fullname = self._h5_dataset_fullname(chr=chr.name, rslt=rslt, overlap=self.overlap)
+                        self.logger.debug(f"create dataset {dataset_fullname} in the h5 file")
+                        data_df = self._bigwig2df(bigwig_fd, chr, rslt, summary)
+                        h5fd.create_dataset(name = dataset_fullname, data = data_df)
+                        h5fd[dataset_fullname].attrs[self.H5Attrs.COLUMNS.value] = data_df.columns.to_list()
 
     def _concat_summary_table(self, 
                               tgt_h5fd: h5py.File, 
@@ -406,6 +405,11 @@ class BioBigWigDataset(BioDataset):
     def __len__(self):
         # regarding to the minimum resolution
         return np.sum(self.sample_nums)
+    
+    def __del__(self):
+        if self.summary_h5_fd is not None:
+            self.summary_h5_fd.close()
+
 
 class BioMafDataset(BioDataset):
 

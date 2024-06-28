@@ -4,7 +4,7 @@ from ._Mappability import MappabilityDataset
 from ._ReplicationTiming import ReplicationTimingDataset
 from ._Epigenomics import RoadmapEpigenomicsDataset
 
-from ._PCAWG import PCAWG
+from ._PCAWG import PCAWGDataset
 
 __all__ = (
     "BioDataset",
@@ -13,7 +13,7 @@ __all__ = (
     "MappabilityDataset",
     "ReplicationTimingDataset",
     "RoadmapEpigenomicsDataset", 
-    "BioDigDriverfDataset", "PCAWG",
+    "BioDigDriverfDataset", "PCAWGDataset",
 )
 
 # def __getattr__(name):
