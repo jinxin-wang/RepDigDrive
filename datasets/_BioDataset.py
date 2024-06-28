@@ -343,6 +343,7 @@ class BioBigWigDataset(BioDataset):
 
         self.logger.debug(f"estimate the shape of entire dataset : {(L, columns_count)}")
         self.logger.debug(f"set the chunk size : {(self.h5_chunk_size, columns_count)}")
+
         # create chunked dataset
         tgt_h5fd.create_dataset(name = self._h5_dataset_fullname(chr.name, rslt, overlap), 
                                 shape = (L, columns_count), 
@@ -550,8 +551,10 @@ class BioDigDriverfDataset(BioMafDataset):
                 for sid, chr_grp in grp.groupby('SAMPLE'):
                     dataset_fullname = self._h5_dataset_fullname(chr = chr, sid = sid)
                     self.logger.debug(f"create dataset {dataset_fullname} in the h5 file")
-                    self.logger.debug(f"{chr_grp[colnames]}")
-                    h5fd.create_dataset(name = dataset_fullname, data = chr_grp[colnames].apply(lambda x: self.encode(x)))
+                    # self.logger.debug(f"{chr_grp[colnames]}")
+                    data = chr_grp[colnames].apply(self.encode, axis=1).apply(pd.Series)
+                    data.columns = self.dataset_colnames
+                    h5fd.create_dataset(name = dataset_fullname, data = data)
                     h5fd[dataset_fullname].attrs[self.H5Attrs.COLUMNS.value] = self.dataset_colnames
 
     ## x is one row in pandas.DataFrame    
@@ -576,27 +579,27 @@ class BioDigDriverfDataset(BioMafDataset):
         return bio.MUT_ANNOT[x['ANNOT'].strip()].value
     
     def _encode_context(self, x: pd.Series, n: int):
-        ctx = x["CONTEXT"]
-        if len(ctx) < n :
+        ctx = x["CONTEXT"].strip()
+        if ctx == '.':
+            return -1
+        elif len(ctx) < n :
             err_msg = f"length of context {x['CONTEXT']} is less than {n}"
             self.logger.error(err_msg)
             raise ValueError(err_msg)
         elif len(ctx) == n :
-            return self.N_grams[n][ctx]
+            return int(self.N_grams[n][ctx])
         else:
             s = int((len(ctx)-n)/2)
-            return self.N_grams[n][ctx[s:s+n]]
+            return int(self.N_grams[n][ctx[s:s+n]])
         
     def _encode_indel(self, x: pd.Series): 
         if x['ANNOT'].strip() == bio.MUT_ANNOT.INDEL.name :
-            if len(x['REF']) > 1:
-                return -len(x['REF'])
-            if len(x['ALT']) > 1:
-                return len(x['ALT'])
+            return len(x['ALT']), len(x['REF'])
         else:
-            return 0
+            return 0, 0
 
     def encode(self, x):
         # MAF_COLUMNS = ['CHROM', 'START', 'END', 'REF', 'ALT', 'SAMPLE', 'GENE', 'ANNOT', 'MUT', 'CONTEXT']
-        self.dataset_colnames = ['START', 'END', 'ANNOT', 'indel_length', 'subs_type', 'subs_class', 'CONTEXT_3']
-        return x['START'], x['END'], self._encode_annot(x), self._encode_indel(x), self._encode_subs_type(x), self._encode_subs_class(x), self._encode_context(x, 3)
+        self.dataset_colnames = ['START', 'END', 'ANNOT', 'del_length', 'insert_length', 'subs_type', 'subs_class', 'CONTEXT_3']
+        rst = [x['START'], x['END'], self._encode_annot(x), *self._encode_indel(x), self._encode_subs_type(x), self._encode_subs_class(x), self._encode_context(x, 3)]
+        return rst
