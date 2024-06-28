@@ -555,7 +555,7 @@ class BioDigDriverfDataset(BioMafDataset):
                     h5fd[dataset_fullname].attrs[self.H5Attrs.COLUMNS.value] = self.dataset_colnames
 
     ## x is one row in pandas.DataFrame    
-    def _encode_subs(self, x: pd.core.series.Series, substitution_dict: Dict):
+    def _encode_subs(self, x: pd.Series, substitution_dict: Dict):
         if len(x["MUT"]) == 3 and x["MUT"][1] == '>' and x["MUT"][0] in bio.nucl and x["MUT"][2] in bio.nucl :
             return substitution_dict[x["MUT"]]
         elif x["ANNOT"].strip() == bio.MUT_ANNOT.INDEL.name :
@@ -563,19 +563,19 @@ class BioDigDriverfDataset(BioMafDataset):
         else: 
             self.logger.error(f"unrecognized value in column 'MUT': {x['MUT']}")
 
-    def _encode_subs_class(self, x: pd.core.series.Series):
+    def _encode_subs_class(self, x: pd.Series):
         return self._encode_subs(x, bio.BASE_SUBSTITUTION_CLASSES)
 
-    def _encode_subs_type(self, x: pd.core.series.Series):
+    def _encode_subs_type(self, x: pd.Series):
         return self._encode_subs(x, bio.BASE_SUBSTITUTION_TYPES)
         
-    def _encode_gene(self, x: pd.core.series.Series):
+    def _encode_gene(self, x: pd.Series):
         pass
 
-    def _encode_annot(self, x: pd.core.series.Series):
+    def _encode_annot(self, x: pd.Series):
         return bio.MUT_ANNOT[x['ANNOT'].strip()].value
     
-    def _encode_context(self, x: pd.core.series.Series, n: int):
+    def _encode_context(self, x: pd.Series, n: int):
         ctx = x["CONTEXT"]
         if len(ctx) < n :
             err_msg = f"length of context {x['CONTEXT']} is less than {n}"
@@ -587,7 +587,7 @@ class BioDigDriverfDataset(BioMafDataset):
             s = int((len(ctx)-n)/2)
             return self.N_grams[n][ctx[s:s+n]]
         
-    def _encode_indel(self, x: pd.core.series.Series): 
+    def _encode_indel(self, x: pd.Series): 
         if x['ANNOT'].strip() == bio.MUT_ANNOT.INDEL.name :
             if len(x['REF']) > 1:
                 return -len(x['REF'])
